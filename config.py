@@ -3,7 +3,7 @@ from typing import Tuple
 import os
 import time
 
-BALL_LABEL = 1
+BALL_LABEL: int = 1
 
 def get_datetime():
     return time.strftime("%d_%m_%Y__%H%M")
@@ -18,7 +18,7 @@ class BaseConfig:
 
     # Model params
     device: str = 'cuda:0'
-    device_type: bool = "cuda"
+    device_type: bool = "cuda"  # Needed for a Torch call it seems
     lr: float = 1e-4
 
     # Training parms

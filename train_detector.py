@@ -122,13 +122,13 @@ def train_model(model, optimizer, scheduler, num_epochs, dataloaders, device, mo
                   f'loss_ball_c: {avg_batch_stats["loss_ball_c"]}')
 
         if params.whole_dataset:
-            if epoch % params.save_epochs_every_n_epochs == 0:
+            if epoch % params.save_every_n_epochs == 0:
                 save_model_weights(model=model, epoch=epoch, params=params)
-        elif params.save_weights_when_testing and epoch % params.save_epochs_every_n_epochs == 0:
+        elif params.save_weights_when_testing and epoch % params.save_every_n_epochs == 0:
             save_model_weights(model=model, epoch=epoch, params=params)
         else:
             # Save the final weights
-            if epoch % params.save_epochs_every_n_epochs == 0 and params.save_heatmaps is True:
+            if epoch % params.save_every_n_epochs == 0 and params.save_heatmaps is True:
                 debugging_ball_feature_maps(predictions, epoch, params)
                 save_model_weights(model=model, epoch=epoch, params=params)
 
