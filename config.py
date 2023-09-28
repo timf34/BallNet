@@ -47,11 +47,9 @@ class BaseConfig:
     save_every_n_epochs: int = 5
     save_weights_when_testing: bool = False
 
-
-
-    def print(self):
+    def pretty_print(self) -> None:
         """
-        Prints the config class and all its attributes to the console, including those from the __post_init__ method.
+        Prints each attribute of the class and its value on a new line
         """
         for i in self.__dict__:
             print(f'{i}: {self.__dict__[i]}')
@@ -113,7 +111,6 @@ class AWSTrainConfig(AWSBaseConfig):
     epochs: int = 20
     whole_dataset: bool = True
     dataset_size: int = -1  # Just a placeholder
-
 
 
 @dataclass
