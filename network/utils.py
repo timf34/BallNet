@@ -14,38 +14,6 @@ vgg_cfg = {
 """
 
 
-def make_vgg_modules(cfg, batch_norm=False):
-    # Create VGG-like network based on given configuration
-    # Each module is a list of sequential layers operating at the same spacial dimension followed by MaxPool2d
-    modules = nn.ModuleList()
-    # Number of output channels in each module
-    out_channels = []
-
-    in_channels = 3
-    layers = []
-
-    for v in cfg:
-        if v == 'M':
-            layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
-            # Create new module with accumulated layers and flush layers list
-            modules.append(nn.Sequential(*layers))
-            out_channels.append(in_channels)
-            layers = []
-        else:
-            if batch_norm:
-                conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1, bias=False)
-                layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
-            else:
-                conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
-                layers += [conv2d, nn.ReLU(inplace=True)]
-            in_channels = v
-
-    # 'M' should be the last layer - and all layers should be flushed
-    assert len(layers) == 0
-
-    return modules, out_channels
-
-
 def count_parameters(model):
     # Count number of parameters in the network: all and trainable
     # Return tuple (all_parameters, trainable_parameters)
