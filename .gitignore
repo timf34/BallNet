@@ -1,10 +1,7 @@
 # Default ignored files
 /shelf/
+.idea/
 /workspace.xml
+/wandb
 *.avi
 *.mp4
-images/
-models/*
-
-.idea/
-/wandb
