@@ -29,6 +29,8 @@ class BaseConfig:
     neg_pos_ratio: int = 3
     use_augmentations: bool = True
     save_pickle_training_stats: bool = False
+    batch_size: int = 1
+
 
     # Data params
     only_ball_frames: bool = True
@@ -74,7 +76,6 @@ class LaptopConfig(BaseConfig):
     """Config for local development on laptop"""
     # Training params
     num_workers: int = 0
-    batch_size: int = 1
     epochs: int = 10
     save_weights: bool = True
 
@@ -135,7 +136,6 @@ class AWSBaseConfig(BaseConfig):
 class AWSTestConfig(AWSBaseConfig):
     """Config for testing on AWS"""
     num_workers: int = 0
-    batch_size: int = 1
     epochs: int = 10
     whole_dataset: bool = False
     dataset_size_per_training_data_folder: int = 2
