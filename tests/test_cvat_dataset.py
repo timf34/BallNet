@@ -1,9 +1,11 @@
 import numpy as np
 import pytest
 
+from typing import List
+
 from config import BohsLaptopConfig, AFLLaptopConfig
-from data.cvat_dataset import CVATBallDataset, create_dataset_from_config
-from data.augmentation import NoAugmentation
+from data.cvat_dataset import create_dataset_from_config
+
 
 
 bohs_config = BohsLaptopConfig()
