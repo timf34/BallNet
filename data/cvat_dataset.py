@@ -5,7 +5,7 @@ import os
 import numpy as np
 
 import data.augmentation as augmentation
-from data.bohs_utils import read_bohs_ground_truth
+from data.cvat_utils import read_bohs_ground_truth
 from config import BaseConfig
 
 BALL_BBOX_SIZE: int = 20
