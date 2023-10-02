@@ -68,6 +68,10 @@ def test_get_elems_with_ball(bohs_dataset, afl_dataset):
     def assert_get_elems_with_ball(dataset):
         elems_with_ball = dataset.get_elems_with_ball()
         assert type(elems_with_ball) == list, "Should return a list"
+        assert len(elems_with_ball) > 0, "Should return a non-empty list"
+        assert len(elems_with_ball) == len(dataset.image_list), "Should return a list with the same length " \
+                                                                "as the dataset. Note: assuming we only label the ball" \
+                                                                "and no players."
 
     assert_get_elems_with_ball(bohs_dataset)
     assert_get_elems_with_ball(afl_dataset)
