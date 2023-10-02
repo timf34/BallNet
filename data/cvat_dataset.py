@@ -1,6 +1,5 @@
 from typing import List, Union
 from PIL import Image
-import random
 import torch
 import os
 import numpy as np
@@ -11,7 +10,8 @@ from config import BaseConfig
 
 BALL_BBOX_SIZE: int = 20
 BALL_LABEL: int = 1
-
+DATASET_JUMP: int = 3  # Number of frames to jump into when creating a non-whole dataset
+DEBUG: bool = False
 
 class CVATBallDataset(torch.utils.data.Dataset):
     def __init__(
@@ -21,32 +21,28 @@ class CVATBallDataset(torch.utils.data.Dataset):
             training_data_folders: List[str],
             only_ball_frames: bool = False,
             whole_dataset: bool = False,
-            dataset_size: int = 1,
+            dataset_size_per_training_data_folder: int = 1,
             image_extension: str = '.png',
             image_name_length: int = 5,
-            randomize_small_batches: bool = True
     ):
         """
         Initializes the dataset.
         :param image_folder_path: Path to 'bohs-preprocessed' folder
         :param only_ball_frames: Whether to only use ball frames.
         :param whole_dataset: Whether to use the whole dataset.
-        :param dataset_size: The size of the dataset to use if not using whole_dataset.
+        :param dataset_size_per_training_data_folder: The size of the dataset to use if not using whole_dataset.
         :param transform: The transform to apply to the dataset.
         """
         self.base_data_path = base_data_path
         self.only_ball_frames = only_ball_frames
         self.whole_dataset = whole_dataset
-        self.dataset_size = dataset_size
+        self.dataset_size_per_training_data_folder = dataset_size_per_training_data_folder
         self.transform = transform
         self.training_data_folders: List[str] = training_data_folders
         self.image_name_length = image_name_length  # Number of digits in the image name
         self.image_extension: str = image_extension
         self.gt_annotations: dict = {}
         self.image_list: list = []
-
-        # TODO: see if we need this
-        self.randomize_small_batches: bool = False
 
         # The folder paths we will be using.
         self.image_folder_path = os.path.join(self.base_data_path, 'unpacked_jpg')
@@ -62,9 +58,10 @@ class CVATBallDataset(torch.utils.data.Dataset):
         print(f"Total number of Bohs Images: {self.n_images}")
         print(f'BOHS: {format(len(self.ball_images_ndx))} frames with the ball')
         print(f'BOHS: {(len(self.no_ball_images_ndx))} frames without the ball')
-        print(f'Using whole dataset (bool): {whole_dataset}')
+        print(f'Whole dataset: {self.whole_dataset}')
 
-        self._debug_create_image_path_txt_files()
+        if DEBUG:
+            self._debug_create_image_path_txt_files()
 
     def __len__(self):
         return self.n_images
@@ -106,12 +103,9 @@ class CVATBallDataset(torch.utils.data.Dataset):
             # TODO: also note that we are only using images that include the ball currently
             annotated_frames = list(set(self.gt_annotations[data_folder].ball_pos))
 
-            # Note that this assumes we have just one camera I think...
-            if not self.whole_dataset:
-                if self.randomize_small_batches:
-                    # So we don't have consecutive images which are almost identical
-                    random.shuffle(annotated_frames)
-                annotated_frames = annotated_frames[3:self.dataset_size + 3]  # TODO: what does this do?W
+            if not self.whole_dataset and len(annotated_frames) != self.dataset_size_per_training_data_folder:
+                annotated_frames = annotated_frames[DATASET_JUMP:self.dataset_size_per_training_data_folder + DATASET_JUMP]
+
 
             images_path = os.path.join(self.image_folder_path, data_folder)
 
@@ -172,7 +166,7 @@ def create_dataset_from_config(conf: BaseConfig) -> CVATBallDataset:
     training_data_folders: List[str] = conf.train_data_folders
     whole_dataset: bool = conf.whole_dataset
     only_ball_frames: bool = conf.only_ball_frames
-    dataset_size: int = conf.dataset_size
+    dataset_size_per_training_data_folder: int = conf.dataset_size_per_training_data_folder
     image_name_length: int = conf.image_name_length
     image_extension: str = conf.image_extension
     use_augs = conf.use_augmentations
@@ -189,7 +183,7 @@ def create_dataset_from_config(conf: BaseConfig) -> CVATBallDataset:
         whole_dataset=whole_dataset,
         transform=transform,
         only_ball_frames=only_ball_frames,
-        dataset_size=dataset_size,
+        dataset_size_per_training_data_folder=dataset_size_per_training_data_folder,
         image_extension=image_extension,
         image_name_length=image_name_length,
     )
@@ -201,7 +195,7 @@ def create_dataset(
             whole_dataset: bool,
             transform,
             only_ball_frames: bool = False,
-            dataset_size: int = 2,
+            dataset_size_per_training_data_folder: int = 2,
             image_extension: str = '.jpg',
             image_name_length: int = 7,
 ) -> CVATBallDataset:
@@ -210,7 +204,7 @@ def create_dataset(
         training_data_folders=training_data_folders,
         only_ball_frames=only_ball_frames,
         whole_dataset=whole_dataset,
-        dataset_size=dataset_size,
+        dataset_size_per_training_data_folder=dataset_size_per_training_data_folder,
         image_extension=image_extension,
         image_name_length=image_name_length,
         transform=transform

@@ -27,7 +27,7 @@ class BaseConfig:
     use_amp: bool = True
     finetuning: bool = False
     neg_pos_ratio: int = 3
-    use_augmentation: bool = True
+    use_augmentations: bool = True
     save_pickle_training_stats: bool = False
 
     # Data params
@@ -37,13 +37,17 @@ class BaseConfig:
     train_size: float = 0.9
     val_size: float = 0.1
     ball_bbox_size: int = 20
+    image_extension: str = '.png'
+    image_name_length: int = 7
+    dataset_size_per_training_data_folder: int = None
 
     # Data constants
     model_folder: str = 'models'
     weights: str = r'C:\Users\timf3\PycharmProjects\BallNet2.0\models\model_20210221_2206_final.pth'
-    data_path: str = r'C:\Users\timf3\OneDrive - Trinity College Dublin\Documents\Documents\datasets\Datasets\Bohs\bohs-preprocessed'
+    base_data_path: str = None  # Set in child class
+    whole_dataset: bool = None  # Set in child class
 
-    video_paths: List[str] = field(default=None)  # List of paths to videos for training and testing
+    train_data_folders: List[str] = field(default=None)  # List of paths to videos for training and testing
 
     # Debugging params
     save_every_n_epochs: int = 5
@@ -55,6 +59,14 @@ class BaseConfig:
         """
         for i in self.__dict__:
             print(f'{i}: {self.__dict__[i]}')
+
+    def __post_init__(self):
+        if self.whole_dataset is None:
+            raise ValueError("`whole_dataset` must be set.")
+        if self.dataset_size_per_training_data_folder is None:
+            raise ValueError("`dataset_size_per_training_data_folder` must be set.")
+        if self.base_data_path is None:
+            raise ValueError("`base_data_path` must be set.")
 
 
 @dataclass
@@ -68,14 +80,30 @@ class LaptopConfig(BaseConfig):
 
     # Data params
     whole_dataset: bool = False
-    dataset_size: int = 2
+    dataset_size_per_training_data_folder: int = 2
+    use_augmentations: bool = False
+
+
+@dataclass
+class AFLLaptopConfig(LaptopConfig):
+    base_data_path: str = r'C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed'
 
     def __post_init__(self):
-        self.video_folders: List[str] = [
+        self.train_data_folders: List[str] = [
+            "jetson1_date_24_02_2023_time__19_45_01_43",
+            "jetson1_date_24_02_2023_time__19_45_01_17",
+        ]  # TODO: replace with AFL data # Just for testing on laptop
+
+
+@dataclass
+class BohsLaptopConfig(LaptopConfig):
+    image_extension: str = '.jpg'
+    base_data_path: str = r'C:\Users\timf3\OneDrive - Trinity College Dublin\Documents\Documents\datasets\Datasets\Bohs\bohs-preprocessed'
+    def __post_init__(self):
+        self.train_data_folders: List[str] = [
                 "jetson1_date_24_02_2023_time__19_45_01_43",
                 "jetson1_date_24_02_2023_time__19_45_01_17",
-        ]  # Just for testing on laptop
-
+        ]  # Bohs data, just for testing on laptop
 
 
 @dataclass
@@ -109,7 +137,7 @@ class AWSTestConfig(AWSBaseConfig):
     batch_size: int = 1
     epochs: int = 10
     whole_dataset: bool = False
-    dataset_size: int = 2
+    dataset_size_per_training_data_folder: int = 2
 
 
 @dataclass
@@ -119,11 +147,11 @@ class AWSTrainConfig(AWSBaseConfig):
     batch_size: int = 32
     epochs: int = 20
     whole_dataset: bool = True
-    dataset_size: int = -1  # Just a placeholder
+    dataset_size_per_training_data_folder: int = -1  # Just a placeholder
 
     def __post_init__(self):
         # TODO: need to add full paths
-        self.video_folders: List[str] = [
+        self.train_data_folders: List[str] = [
             "jetson1_date_24_02_2023_time__19_45_01_43",
             "jetson1_date_24_02_2023_time__19_45_01_17",
         ]  # Full training paths on AWS
@@ -137,5 +165,5 @@ class AWSFineTuningConfig(AWSBaseConfig):
 
 
 if __name__ == '__main__':
-    x = LaptopConfig()
-    print(x)
+    x = BohsLaptopConfig()
+    x.pretty_print()
