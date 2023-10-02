@@ -30,7 +30,7 @@ class BaseConfig:
     use_augmentations: bool = True
     save_pickle_training_stats: bool = False
     batch_size: int = 1
-
+    num_workers: int = 0
 
     # Data params
     only_ball_frames: bool = True
@@ -75,7 +75,6 @@ class BaseConfig:
 class LaptopConfig(BaseConfig):
     """Config for local development on laptop"""
     # Training params
-    num_workers: int = 0
     epochs: int = 10
     save_weights: bool = True
 
