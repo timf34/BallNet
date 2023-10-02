@@ -45,7 +45,7 @@ class CVATBallDataset(torch.utils.data.Dataset):
         self.image_list: list = []
 
         # The folder paths we will be using.
-        self.image_folder_path = os.path.join(self.base_data_path, 'unpacked_jpg')
+        self.image_folder_path = os.path.join(self.base_data_path, f'unpacked_{image_extension.replace(".", "")}')
         self.annotations_folder_path = os.path.join(self.base_data_path, 'annotations')
 
         assert transform is not None, "Transform must be specified"
@@ -175,7 +175,7 @@ def create_dataset_from_config(conf: BaseConfig) -> CVATBallDataset:
         transform = augmentation.TrainAugmentation(size=conf.train_image_size)
     else:
         transform = augmentation.NoAugmentation(size=conf.val_image_size)
-        print("creating Bohs Dataset with **no** augmentations (besides normalization)")
+        print("creating CVAT Dataset with **no** augmentations (besides normalization)")
 
     return create_dataset(
         base_data_path=base_data_path,
