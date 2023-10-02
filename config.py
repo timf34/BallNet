@@ -86,13 +86,14 @@ class LaptopConfig(BaseConfig):
 
 @dataclass
 class AFLLaptopConfig(LaptopConfig):
+    image_extension: str = '.png'
     base_data_path: str = r'C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed'
 
     def __post_init__(self):
         self.train_data_folders: List[str] = [
-            "jetson1_date_24_02_2023_time__19_45_01_43",
-            "jetson1_date_24_02_2023_time__19_45_01_17",
-        ]  # TODO: replace with AFL data # Just for testing on laptop
+            "marvel_1_time_04_09_04_date_20_08_2023_0",
+            "marvel_1_time_04_09_04_date_20_08_2023_2",
+        ]  # Just for testing on laptop
 
 
 @dataclass

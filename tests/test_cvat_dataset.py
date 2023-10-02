@@ -1,22 +1,22 @@
 import numpy as np
 
-from config import BohsLaptopConfig
+from config import BohsLaptopConfig, AFLLaptopConfig
 from data.cvat_dataset import CVATBallDataset, create_dataset_from_config
 from data.augmentation import NoAugmentation
 
 
-config = BohsLaptopConfig()
+
 
 def test_initialization():
-    # Scenario 1: Test that the class can be initialized
-    dataset = create_dataset_from_config(config)
+    # Scenario 1: Bohs Config
+    bohs_config = BohsLaptopConfig()
+    dataset = create_dataset_from_config(bohs_config)
     assert dataset is not None, "Failed to initialize CVATBallDataset"
 
-    # Scenario 2: Transform should not be None
-    # try:
-    #     CVATBallDataset(dataset_path=dataset_path, transform=None)
-    # except AssertionError as e:
-    #     assert str(e) == "Transform must be specified", "Improper error message for None transform"
+    # Scenario 2: AFL Config
+    afl_config = AFLLaptopConfig()
+    dataset = create_dataset_from_config(afl_config)
+    assert dataset is not None, "Failed to initialize CVATBallDataset"
 
 
 def test_length():
