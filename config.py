@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Tuple
+from typing import Tuple, List
 import os
 import time
 
@@ -43,6 +43,8 @@ class BaseConfig:
     weights: str = r'C:\Users\timf3\PycharmProjects\BallNet2.0\models\model_20210221_2206_final.pth'
     data_path: str = r'C:\Users\timf3\OneDrive - Trinity College Dublin\Documents\Documents\datasets\Datasets\Bohs\bohs-preprocessed'
 
+    video_paths: List[str] = field(default=None)  # List of paths to videos for training and testing
+
     # Debugging params
     save_every_n_epochs: int = 5
     save_weights_when_testing: bool = False
@@ -67,6 +69,13 @@ class LaptopConfig(BaseConfig):
     # Data params
     whole_dataset: bool = False
     dataset_size: int = 2
+
+    def __post_init__(self):
+        self.video_folders: List[str] = [
+                "jetson1_date_24_02_2023_time__19_45_01_43",
+                "jetson1_date_24_02_2023_time__19_45_01_17",
+        ]  # Just for testing on laptop
+
 
 
 @dataclass
@@ -111,6 +120,13 @@ class AWSTrainConfig(AWSBaseConfig):
     epochs: int = 20
     whole_dataset: bool = True
     dataset_size: int = -1  # Just a placeholder
+
+    def __post_init__(self):
+        # TODO: need to add full paths
+        self.video_folders: List[str] = [
+            "jetson1_date_24_02_2023_time__19_45_01_43",
+            "jetson1_date_24_02_2023_time__19_45_01_17",
+        ]  # Full training paths on AWS
 
 
 @dataclass

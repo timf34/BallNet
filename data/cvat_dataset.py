@@ -1,4 +1,4 @@
-from typing import List, Union, Dict
+from typing import List, Union
 from PIL import Image
 import random
 import torch
@@ -7,24 +7,25 @@ import numpy as np
 
 import data.augmentation as augmentation
 from data.bohs_utils import read_bohs_ground_truth
-from config import Config
+from config import BaseConfig
 
 BALL_BBOX_SIZE = 20
 BALL_LABEL = 1
 
 
-class BohsDataset(torch.utils.data.Dataset):
-    """
-    A class for loading the bohs dataset.
-    """
-    def __init__(self, dataset_path: str,
-                 transform: Union[augmentation.TrainAugmentation, augmentation.NoAugmentation],
-                 only_ball_frames: bool = False,
-                 whole_dataset: bool = False,
-                 dataset_size: int = 1,
-                 image_extension: str = '.jpg',
-                 image_name_length: int = 7,
-                 randomize_small_batches: bool = True):
+class CVATBallDataset(torch.utils.data.Dataset):
+    def __init__(
+            self,
+            dataset_path: str,
+            transform: Union[augmentation.TrainAugmentation, augmentation.NoAugmentation],
+            training_data_folders: List[str],
+            only_ball_frames: bool = False,
+            whole_dataset: bool = False,
+            dataset_size: int = 1,
+            image_extension: str = '.png',
+            image_name_length: int = 5,
+            randomize_small_batches: bool = True
+    ):
         """
         Initializes the dataset.
         :param image_folder_path: Path to 'bohs-preprocessed' folder
@@ -33,35 +34,12 @@ class BohsDataset(torch.utils.data.Dataset):
         :param dataset_size: The size of the dataset to use if not using whole_dataset.
         :param transform: The transform to apply to the dataset.
         """
-        print("Whole dataset: ", whole_dataset)
         self.dataset_path = dataset_path
         self.only_ball_frames = only_ball_frames
         self.whole_dataset = whole_dataset
         self.dataset_size = dataset_size
         self.transform = transform
-        self.cameras: List[str] = [
-            # "1_4_22_60FPS_jetson3_30s_test_clip_from_1945_vid",
-            # "jetson3_1_4_2022_time__19_45_01_4",
-            # "time_19_00_09_date_06_11_2022__4",
-            # "jetson3_1_4_2022_time__21_25_19_2_minutes",
-            # "jetson3_1_4_2022_time__20_40_14_20",
-            # "jetson3_1_4_2022_time__19_45_01_5"
-            # "jetson1_date_01_04_2022_time__19_45_01_4",
-            # "jetson1_date_01_04_2022_time__19_45_01_5",
-            # "jetson1_date_01_04_2022_time__20_40_14_20",
-            # "jetson1_date_01_04_2022_time__20_40_14_25",
-            # "jetson1_date_01_04_2022_time__21_25_19_1",
-            # "jetson1_date_17_06_2022_time__19_45_05_27",
-            # "jetson1_date_24_02_2023_time__19_45_01_22",
-            # "jetson1_date_24_02_2023_time__19_45_01_23",
-            # "jetson1_date_24_02_2023_time__19_45_01_24",
-            # "jetson1_date_24_02_2023_time__19_45_01_26",
-            # "jetson1_date_24_02_2023_time__19_45_01_29",
-            # "jetson1_date_24_02_2023_time__19_45_01_39",
-            # "jetson1_date_24_02_2023_time__19_45_01_37",
-            "jetson1_date_24_02_2023_time__19_45_01_43",
-            "jetson1_date_24_02_2023_time__19_45_01_17",
-        ]
+        self.training_data_folders: List[str] = training_data_folders
         self.image_name_length = image_name_length  # Number of digits in the image name
         self.image_extension: str = image_extension
         self.gt_annotations: dict = {}
@@ -72,32 +50,33 @@ class BohsDataset(torch.utils.data.Dataset):
         self.annotations_folder_path = os.path.join(self.dataset_path, 'annotations')
 
         assert transform is not None, "Transform must be specified"
+        assert self.video_paths is not None, "No video paths passed to dataset initialization"
 
         # This is just copying what is here already... probably a cleaner way to do this.
-        for camera_id in self.cameras:
+        for data_folder in self.training_data_folders:
             # Read ground truth data for the sequence
-            self.gt_annotations[camera_id] = read_bohs_ground_truth(annotations_path=self.annotations_folder_path,
-                                                                    xml_file_name=f'{camera_id}.xml')
+            self.gt_annotations[data_folder] = read_bohs_ground_truth(annotations_path=self.annotations_folder_path,
+                                                                    xml_file_name=f'{data_folder}.xml')
 
             # Create a list with ids of all images with any annotation
             # TODO: also note that we are only using images that include the ball currently
-            annotated_frames = list(set(self.gt_annotations[camera_id].ball_pos))
+            annotated_frames = list(set(self.gt_annotations[data_folder].ball_pos))
 
             # Note that this assumes we have just one camera I think...
             if not whole_dataset:
                 if randomize_small_batches:
                     # So we don't have consecutive images which are almost identical
                     random.shuffle(annotated_frames)
-                annotated_frames = annotated_frames[3:self.dataset_size+3]
+                annotated_frames = annotated_frames[3:self.dataset_size+3]  # TODO: what does this do?W
 
-            images_path = os.path.join(self.image_folder_path, camera_id)
+            images_path = os.path.join(self.image_folder_path, data_folder)
 
             for e in annotated_frames:
                 e = str(e)
                 e = e.zfill(self.image_name_length)
                 file_path = os.path.join(images_path, f'frame_{e}{self.image_extension}')
                 if os.path.exists(file_path):
-                    self.image_list.append((file_path, camera_id, e))
+                    self.image_list.append((file_path, data_folder, e))
                 else:
                     print("doesn't exist", file_path)
                     print("check whether its frame_000001.png or just 000001.png")
@@ -125,22 +104,22 @@ class BohsDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, ndx):
         # Returns transferred image as a normalized tensor
-        image_path, camera_id, image_ndx = self.image_list[ndx]
+        image_path, data_folder, image_ndx = self.image_list[ndx]
         image = Image.open(image_path)
-        boxes, labels = self.get_annotations(camera_id, image_ndx)
+        boxes, labels = self.get_annotations(data_folder, image_ndx)
         image, boxes, labels = self.transform((image, boxes, labels))
         boxes = torch.tensor(boxes, dtype=torch.float)
         labels = torch.tensor(labels, dtype=torch.int64)
         return image, boxes, labels
 
-    def get_annotations(self, camera_id, image_ndx):
+    def get_annotations(self, data_folder, image_ndx):
         # Prepare annotations as list of boxes (xmin, ymin, xmax, ymax) in pixel coordinates
         # and torch int64 tensor of corresponding labels
         boxes = []
         labels = []
         # TODO: I needed to change ndx to ints for this dataset. This is because the ndx's come like '00001' but
         #  they're indexed as 1
-        ball_pos = self.gt_annotations[camera_id].ball_pos[int(image_ndx)]
+        ball_pos = self.gt_annotations[data_folder].ball_pos[int(image_ndx)]
         if ball_pos != [[]]:
             for (x, y) in ball_pos:
                 x1 = x - BALL_BBOX_SIZE // 2
@@ -155,8 +134,8 @@ class BohsDataset(torch.utils.data.Dataset):
     def get_elems_with_ball(self) -> List:
         # Get indexes of images with ball ground truth
         ball_images_ndx = []
-        for ndx, (_, camera_id, image_ndx) in enumerate(self.image_list):
-            ball_pos = self.gt_annotations[camera_id].ball_pos[int(image_ndx)]
+        for ndx, (_, data_folder, image_ndx) in enumerate(self.image_list):
+            ball_pos = self.gt_annotations[data_folder].ball_pos[int(image_ndx)]
             if len(ball_pos) > 0 and ball_pos != [[]]: # With the collate function, empty lists are converted to [[]]
                 ball_images_ndx.append(ndx)
 
@@ -174,7 +153,7 @@ class BohsDataset(torch.utils.data.Dataset):
             print(f"Folder {folder_name} already exists")
 
 
-def create_bohs_dataset(conf: Config,
+def create_bohs_dataset(conf: BaseConfig,
                         dataset_path: str,
                         whole_dataset: bool,
                         only_ball_frames: bool = False,
@@ -193,7 +172,7 @@ def create_bohs_dataset(conf: Config,
         transform = augmentation.NoAugmentation(size=conf.val_image_size)
         print("creating Bohs Dataset with **no** augmentations (besides normalization)")
 
-    return BohsDataset(dataset_path=dataset_path,
+    return CVATBallDataset(dataset_path=dataset_path,
                        only_ball_frames=only_ball_frames,
                        whole_dataset=whole_dataset,
                        dataset_size=dataset_size,
