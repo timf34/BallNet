@@ -1,31 +1,36 @@
 import numpy as np
+import pytest
 
 from config import BohsLaptopConfig, AFLLaptopConfig
 from data.cvat_dataset import CVATBallDataset, create_dataset_from_config
 from data.augmentation import NoAugmentation
 
 
+bohs_config = BohsLaptopConfig()
+afl_config = AFLLaptopConfig()
 
+@pytest.fixture(scope="module")
+def bohs_dataset():
+    return create_dataset_from_config(bohs_config)
 
-def test_initialization():
-    # Scenario 1: Bohs Config
-    bohs_config = BohsLaptopConfig()
-    dataset = create_dataset_from_config(bohs_config)
-    assert dataset is not None, "Failed to initialize CVATBallDataset"
+@pytest.fixture(scope="module")
+def afl_dataset():
+    return create_dataset_from_config(afl_config)
 
-    # Scenario 2: AFL Config
-    afl_config = AFLLaptopConfig()
-    dataset = create_dataset_from_config(afl_config)
-    assert dataset is not None, "Failed to initialize CVATBallDataset"
+def test_initialization(bohs_dataset, afl_dataset):
+    def assert_initialization(dataset):
+        assert dataset is not None, "Failed to initialize CVATBallDataset"
 
+    assert_initialization(bohs_dataset)
+    assert_initialization(afl_dataset)
 
-def test_length():
-    dataset_path = '/path/to/dataset'
-    transform = NoAugmentation(size=300)
-    dataset = CVATBallDataset(dataset_path=dataset_path, transform=transform)
+def test_length(bohs_dataset, afl_dataset):
+    def assert_length(dataset):
+        # Check if __len__ returns the correct length for the dataset
+        assert len(dataset) == dataset.n_images, "Dataset length mismatch"
 
-    # Scenario 1: Check if __len__ returns the correct length
-    assert len(dataset) == dataset.n_images, "Dataset length mismatch"
+    assert_length(bohs_dataset)
+    assert_length(afl_dataset)
 
 
 def test_get_item():
@@ -62,8 +67,8 @@ def test_get_elems_with_ball():
 
 
 # Running tests
-test_initialization()
-# test_length()
+# test_initialization(bohs_dataset, afl_dataset)
+# test_length(bohs_dataset, afl_dataset)
 # test_get_item()
 # test_get_annotations()
 # test_get_elems_with_ball()
