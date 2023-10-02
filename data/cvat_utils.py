@@ -99,7 +99,7 @@ def _create_bohs_annotations(gt: dict, frame_shape: Tuple[int, int] = (1080, 192
     return annotations
 
 
-def read_bohs_ground_truth(annotations_path: str, xml_file_name: str) -> SequenceAnnotations:
+def read_cvat_ground_truth(annotations_path: str, xml_file_name: str) -> SequenceAnnotations:
     """
     Reads the groundtruth xml file and returns a SequenceAnnotations object
 
