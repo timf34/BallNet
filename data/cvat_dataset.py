@@ -9,8 +9,8 @@ import data.augmentation as augmentation
 from data.bohs_utils import read_bohs_ground_truth
 from config import BaseConfig
 
-BALL_BBOX_SIZE = 20
-BALL_LABEL = 1
+BALL_BBOX_SIZE: int = 20
+BALL_LABEL: int = 1
 
 
 class CVATBallDataset(torch.utils.data.Dataset):
@@ -61,7 +61,7 @@ class CVATBallDataset(torch.utils.data.Dataset):
         print(f'BOHS: {(len(self.no_ball_images_ndx))} frames without the ball')
         print(f'Using whole dataset (bool): {whole_dataset}')
 
-        self._debug_txt_files()
+        self._debug_create_image_path_txt_files()
 
     def __len__(self):
         return self.n_images
@@ -76,7 +76,7 @@ class CVATBallDataset(torch.utils.data.Dataset):
         labels = torch.tensor(labels, dtype=torch.int64)
         return image, boxes, labels
 
-    def _debug_txt_files(self):
+    def _debug_create_image_path_txt_files(self):
         """Function to create txt files with image paths for debugging"""
         if not self.whole_dataset:
             # Create new folder and copy image paths to it. This is for testing the overfitted model
@@ -92,6 +92,7 @@ class CVATBallDataset(torch.utils.data.Dataset):
 
 
     def _load_annotations_and_image(self):
+        # TODO: refactor this function into smaller functions
         # This is just copying what is here already... probably a cleaner way to do this.
         for data_folder in self.training_data_folders:
             # Read ground truth data for the sequence
@@ -163,18 +164,14 @@ class CVATBallDataset(torch.utils.data.Dataset):
             print(f"Folder {folder_name} already exists")
 
 
-def create_bohs_dataset(conf: BaseConfig,
-                        dataset_path: str,
-                        whole_dataset: bool,
-                        only_ball_frames: bool = False,
-                        dataset_size: int = 2,
-                        image_extension: str = '.jpg',
-                        cameras: List[int] = None,
-                        image_name_length: int = 7,
-                        use_augs: bool = False):
-
-    if cameras is None:
-        cameras = [1]
+def create_dataset_from_config(conf: BaseConfig) -> CVATBallDataset:
+    dataset_paths: List[str] = conf.train_data_folders
+    whole_dataset: bool = conf.whole_dataset
+    only_ball_frames: bool = conf.only_ball_frames
+    dataset_size: int = conf.dataset_size
+    image_name_length: int = conf.image_name_length
+    image_extension: str = conf.image_extension
+    use_augs = conf.use_augmentations
 
     if use_augs:
         transform = augmentation.TrainAugmentation(size=conf.train_image_size)
@@ -182,10 +179,32 @@ def create_bohs_dataset(conf: BaseConfig,
         transform = augmentation.NoAugmentation(size=conf.val_image_size)
         print("creating Bohs Dataset with **no** augmentations (besides normalization)")
 
-    return CVATBallDataset(dataset_path=dataset_path,
-                       only_ball_frames=only_ball_frames,
-                       whole_dataset=whole_dataset,
-                       dataset_size=dataset_size,
-                       image_extension=image_extension,
-                       image_name_length=image_name_length,
-                       transform=transform)
+    return create_dataset(
+        dataset_paths=dataset_paths,
+        whole_dataset=whole_dataset,
+        transform=transform,
+        only_ball_frames=only_ball_frames,
+        dataset_size=dataset_size,
+        image_extension=image_extension,
+        image_name_length=image_name_length,
+    )
+
+
+def create_dataset(
+            dataset_paths: List[str],
+            whole_dataset: bool,
+            transform,
+            only_ball_frames: bool = False,
+            dataset_size: int = 2,
+            image_extension: str = '.jpg',
+            image_name_length: int = 7,
+) -> CVATBallDataset:
+    return CVATBallDataset(
+        dataset_path=dataset_paths,
+        only_ball_frames=only_ball_frames,
+        whole_dataset=whole_dataset,
+        dataset_size=dataset_size,
+        image_extension=image_extension,
+        image_name_length=image_name_length,
+        transform=transform
+    )
