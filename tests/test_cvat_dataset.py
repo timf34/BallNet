@@ -46,22 +46,21 @@ def test_get_item(bohs_dataset, afl_dataset):
 
 
 def test_get_annotations(bohs_dataset, afl_dataset):
-    def assert_get_annotations(dataset, data_folder, image_ndx=0):
-        boxes, labels = dataset.get_annotations(data_folder, image_ndx)
-        assert type(boxes) == np.ndarray, "Boxes should be numpy array"
-        assert type(labels) == np.ndarray, "Labels should be numpy array"
+    def assert_get_annotations(dataset, data_folder: str, image_ndx: List[str]):
+        for idx in image_ndx:
+            boxes, labels = dataset.get_annotations(data_folder, idx)
+            assert type(boxes) == np.ndarray, "Boxes should be numpy array"
+            assert type(labels) == np.ndarray, "Labels should be numpy array"
 
     # NDX values here are hardcoded to contain a sample with no label, and with a label respectively
 
     bohs_data_folder = bohs_config.train_data_folders[0]
     bohs_image_ndxs = [0, 533]
-    for bohs_image_ndx in bohs_image_ndxs:
-        assert_get_annotations(bohs_dataset, bohs_data_folder, bohs_image_ndx)
+    assert_get_annotations(bohs_dataset, bohs_data_folder, bohs_image_ndxs)
 
     afl_data_folder = afl_config.train_data_folders[0]
-    afl_image_ndx = [0, 495]
-    for afl_image_ndx in afl_image_ndx:
-        assert_get_annotations(afl_dataset, afl_data_folder, afl_image_ndx)
+    afl_image_ndxs = [0, 495]
+    assert_get_annotations(afl_dataset, afl_data_folder, afl_image_ndxs)
 
 
 def test_get_elems_with_ball(bohs_dataset, afl_dataset):
@@ -75,11 +74,3 @@ def test_get_elems_with_ball(bohs_dataset, afl_dataset):
 
     assert_get_elems_with_ball(bohs_dataset)
     assert_get_elems_with_ball(afl_dataset)
-
-
-# Running tests
-# test_initialization(bohs_dataset, afl_dataset)
-# test_length(bohs_dataset, afl_dataset)
-# test_get_item()
-# test_get_annotations()
-# test_get_elems_with_ball()
