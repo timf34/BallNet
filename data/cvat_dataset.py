@@ -52,52 +52,16 @@ class CVATBallDataset(torch.utils.data.Dataset):
         assert transform is not None, "Transform must be specified"
         assert self.video_paths is not None, "No video paths passed to dataset initialization"
 
-        # This is just copying what is here already... probably a cleaner way to do this.
-        for data_folder in self.training_data_folders:
-            # Read ground truth data for the sequence
-            self.gt_annotations[data_folder] = read_bohs_ground_truth(annotations_path=self.annotations_folder_path,
-                                                                    xml_file_name=f'{data_folder}.xml')
-
-            # Create a list with ids of all images with any annotation
-            # TODO: also note that we are only using images that include the ball currently
-            annotated_frames = list(set(self.gt_annotations[data_folder].ball_pos))
-
-            # Note that this assumes we have just one camera I think...
-            if not whole_dataset:
-                if randomize_small_batches:
-                    # So we don't have consecutive images which are almost identical
-                    random.shuffle(annotated_frames)
-                annotated_frames = annotated_frames[3:self.dataset_size+3]  # TODO: what does this do?W
-
-            images_path = os.path.join(self.image_folder_path, data_folder)
-
-            for e in annotated_frames:
-                e = str(e)
-                e = e.zfill(self.image_name_length)
-                file_path = os.path.join(images_path, f'frame_{e}{self.image_extension}')
-                if os.path.exists(file_path):
-                    self.image_list.append((file_path, data_folder, e))
-                else:
-                    print("doesn't exist", file_path)
-                    print("check whether its frame_000001.png or just 000001.png")
-
+        self._load_annotations_and_image()
         self.n_images = len(self.image_list)
-        print(f"Total number of Bohs Images: {self.n_images}")
         self.ball_images_ndx = set(self.get_elems_with_ball())
         self.no_ball_images_ndx = set([ndx for ndx in range(self.n_images) if ndx not in self.ball_images_ndx])
+        print(f"Total number of Bohs Images: {self.n_images}")
         print(f'BOHS: {format(len(self.ball_images_ndx))} frames with the ball')
         print(f'BOHS: {(len(self.no_ball_images_ndx))} frames without the ball')
         print(f'Using whole dataset (bool): {whole_dataset}')
 
-        if not self.whole_dataset:
-            # Create new folder and copy image paths to it. This is for testing the overfitted model
-            self.create_new_folder('../txt_testing_files')
-
-            print("Here are the paths to the images:")
-            with open('../txt_testing_files/image_paths.txt', 'w') as f:
-                for image in self.image_list:
-                    print(image)
-                    f.write(image[0] + '\n')
+        self._debug_txt_files()
 
     def __len__(self):
         return self.n_images
@@ -111,6 +75,52 @@ class CVATBallDataset(torch.utils.data.Dataset):
         boxes = torch.tensor(boxes, dtype=torch.float)
         labels = torch.tensor(labels, dtype=torch.int64)
         return image, boxes, labels
+
+    def _debug_txt_files(self):
+        """Function to create txt files with image paths for debugging"""
+        if not self.whole_dataset:
+            # Create new folder and copy image paths to it. This is for testing the overfitted model
+            self.create_new_folder('../txt_testing_files')
+
+            print("Here are the paths to the images:")
+            with open('../txt_testing_files/image_paths.txt', 'w') as f:
+                for image in self.image_list:
+                    print(image)
+                    f.write(image[0] + '\n')
+        elif os.path.exists('../txt_testing_files'):
+            os.rmdir('../txt_testing_files')
+
+
+    def _load_annotations_and_image(self):
+        # This is just copying what is here already... probably a cleaner way to do this.
+        for data_folder in self.training_data_folders:
+            # Read ground truth data for the sequence
+            self.gt_annotations[data_folder] = read_bohs_ground_truth(annotations_path=self.annotations_folder_path,
+                                                                      xml_file_name=f'{data_folder}.xml')
+
+            # Create a list with ids of all images with any annotation
+            # TODO: also note that we are only using images that include the ball currently
+            annotated_frames = list(set(self.gt_annotations[data_folder].ball_pos))
+
+            # Note that this assumes we have just one camera I think...
+            if not self.whole_dataset:
+                if self.randomize_small_batches:
+                    # So we don't have consecutive images which are almost identical
+                    random.shuffle(annotated_frames)
+                annotated_frames = annotated_frames[3:self.dataset_size + 3]  # TODO: what does this do?W
+
+            images_path = os.path.join(self.image_folder_path, data_folder)
+
+            for e in annotated_frames:
+                e = str(e)
+                e = e.zfill(self.image_name_length)
+                file_path = os.path.join(images_path, f'frame_{e}{self.image_extension}')
+                if os.path.exists(file_path):
+                    self.image_list.append((file_path, data_folder, e))
+                else:
+                    print("doesn't exist", file_path)
+                    print("check whether its frame_000001.png or just 000001.png")
+
 
     def get_annotations(self, data_folder, image_ndx):
         # Prepare annotations as list of boxes (xmin, ymin, xmax, ymax) in pixel coordinates
