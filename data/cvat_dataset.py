@@ -5,7 +5,7 @@ import os
 import numpy as np
 
 import data.augmentation as augmentation
-from data.cvat_utils import read_bohs_ground_truth
+from data.cvat_utils import read_cvat_ground_truth
 from config import BaseConfig
 
 BALL_BBOX_SIZE: int = 20
@@ -51,7 +51,7 @@ class CVATBallDataset(torch.utils.data.Dataset):
         assert transform is not None, "Transform must be specified"
         assert self.training_data_folders is not None, "No video paths passed to dataset initialization"
 
-        self._load_annotations_and_image()
+        self._load_annotations_and_images()
         self.n_images = len(self.image_list)
         self.ball_images_ndx = set(self.get_elems_with_ball())
         self.no_ball_images_ndx = {ndx for ndx in range(self.n_images) if ndx not in self.ball_images_ndx}
@@ -82,7 +82,7 @@ class CVATBallDataset(torch.utils.data.Dataset):
         labels = torch.tensor(labels, dtype=torch.int64)
         return image, boxes, labels
 
-    def _debug_create_image_path_txt_files(self):
+    def _debug_create_image_path_txt_files(self) -> None:
         """Function to create txt files with image paths for debugging"""
         if not self.whole_dataset:
             # Create new folder and copy image paths to it. This is for testing the overfitted model
@@ -97,34 +97,42 @@ class CVATBallDataset(torch.utils.data.Dataset):
             os.rmdir('../txt_testing_files')
 
 
-    def _load_annotations_and_image(self):
-        # TODO: refactor this function into smaller functions
-        # This is just copying what is here already... probably a cleaner way to do this.
+    def _load_annotations_and_images(self) -> None:
         for data_folder in self.training_data_folders:
             # Read ground truth data for the sequence
-            self.gt_annotations[data_folder] = read_bohs_ground_truth(annotations_path=self.annotations_folder_path,
-                                                                      xml_file_name=f'{data_folder}.xml')
-
-            # Create a list with ids of all images with any annotation
-            # TODO: also note that we are only using images that include the ball currently
-            annotated_frames = list(set(self.gt_annotations[data_folder].ball_pos))
-
-            if not self.whole_dataset and len(annotated_frames) != self.dataset_size_per_training_data_folder:
-                annotated_frames = annotated_frames[DATASET_JUMP:self.dataset_size_per_training_data_folder + DATASET_JUMP]
-
-
+            self.gt_annotations[data_folder] = read_cvat_ground_truth(
+                annotations_path=self.annotations_folder_path,
+                xml_file_name=f'{data_folder}.xml'
+            )
+            annotated_frames = self._get_annotated_frames(data_folder)
             images_path = os.path.join(self.image_folder_path, data_folder)
+            self._populate_image_list(images_path, annotated_frames, data_folder)
 
-            for e in annotated_frames:
-                e = str(e)
-                e = e.zfill(self.image_name_length)
-                file_path = os.path.join(images_path, f'frame_{e}{self.image_extension}')
-                if os.path.exists(file_path):
-                    self.image_list.append((file_path, data_folder, e))
-                else:
-                    print("doesn't exist", file_path)
-                    print("check whether its frame_000001.png or just 000001.png")
 
+    def _get_annotated_frames(self, data_folder: str) -> List[str]:
+        """
+            Note: we're only including ball images currently.
+            Create a list with ids of all images with any annotation
+        """
+        annotated_frames = list(set(self.gt_annotations[data_folder].ball_pos))
+
+        # Slice the dataset if not using the whole dataset: This is done per data folder.
+        if not self.whole_dataset and len(annotated_frames) != self.dataset_size_per_training_data_folder:
+            annotated_frames = annotated_frames[DATASET_JUMP:self.dataset_size_per_training_data_folder + DATASET_JUMP]
+
+        return annotated_frames
+
+    def _populate_image_list(self, images_path: str, annotated_frames: List[str], data_folder: str) -> None:
+        for frame_number in annotated_frames:
+            padded_frame_number = str(frame_number).zfill(self.image_name_length)
+            file_path = os.path.join(images_path, f'frame_{padded_frame_number}{self.image_extension}')
+            self._append_image_if_exists(file_path, data_folder, padded_frame_number)
+
+    def _append_image_if_exists(self, file_path: str, data_folder: str, frame_number: str) -> None:
+        if os.path.exists(file_path):
+            self.image_list.append((file_path, data_folder, frame_number))
+        else:
+            print(f"Doesn't exist: {file_path}")
 
     def get_annotations(self, data_folder, image_ndx):
         # Prepare annotations as list of boxes (xmin, ymin, xmax, ymax) in pixel coordinates
