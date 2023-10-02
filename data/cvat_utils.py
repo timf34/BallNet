@@ -230,20 +230,7 @@ def eval_single_frame(
     return precision, recall, correctly_classified
 
 
-def reading_afl_xml() -> None:
-    # Just for development purposes
-    track_id_xml_path: str = r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\annotations\marvel_3_time_04_09_06_date_20_08_2023_4.xml"
-    image_id_xml_path: str = r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\annotations\marvel_1_time_04_09_04_date_20_08_2023_0.xml"
-
-    track_id_xml = _load_cvat_groundtruth(track_id_xml_path)
-    print(f"track_id_xml: \n {track_id_xml}")
-
-    image_id_xml = _load_cvat_groundtruth(image_id_xml_path)
-    print(f"image_id_xml: \n {image_id_xml}")
-
-
 if __name__ == '__main__':
     print("oh no")
-    reading_afl_xml()
     print("oh yes")
 
