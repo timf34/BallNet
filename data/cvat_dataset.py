@@ -139,8 +139,6 @@ class CVATBallDataset(torch.utils.data.Dataset):
         # and torch int64 tensor of corresponding labels
         boxes = []
         labels = []
-        # TODO: I needed to change ndx to ints for this dataset. This is because the ndx's come like '00001' but
-        #  they're indexed as 1
         ball_pos = self.gt_annotations[data_folder].ball_pos[int(image_ndx)]
         if ball_pos != [[]]:
             for (x, y) in ball_pos:
@@ -162,17 +160,6 @@ class CVATBallDataset(torch.utils.data.Dataset):
                 ball_images_ndx.append(ndx)
 
         return ball_images_ndx
-
-    @staticmethod
-    def create_new_folder(folder_name) -> None:
-        """
-            This function checks if a folder exists, and if not, creates it.
-        """
-        if not os.path.exists(folder_name):
-            os.mkdir(folder_name)
-            print(f"Folder {folder_name} was created")
-        else:
-            print(f"Folder {folder_name} already exists")
 
 
 def create_dataset_from_config(conf: BaseConfig) -> CVATBallDataset:
