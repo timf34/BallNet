@@ -7,9 +7,11 @@ from config import BohsLaptopConfig, AFLLaptopConfig
 from data.cvat_dataset import create_dataset_from_config
 
 
-
 bohs_config = BohsLaptopConfig()
 afl_config = AFLLaptopConfig()
+whole_dataset_config = BohsLaptopConfig()
+whole_dataset_config.whole_dataset = True
+
 
 @pytest.fixture(scope="module")
 def bohs_dataset():
@@ -19,23 +21,29 @@ def bohs_dataset():
 def afl_dataset():
     return create_dataset_from_config(afl_config)
 
-def test_initialization(bohs_dataset, afl_dataset):
+@pytest.fixture(scope="module")
+def whole_dataset():
+    return create_dataset_from_config(whole_dataset_config)
+
+def test_initialization(bohs_dataset, afl_dataset, whole_dataset):
     def assert_initialization(dataset):
         assert dataset is not None, "Failed to initialize CVATBallDataset"
 
     assert_initialization(bohs_dataset)
     assert_initialization(afl_dataset)
+    assert_initialization(whole_dataset)
 
-def test_length(bohs_dataset, afl_dataset):
+def test_length(bohs_dataset, afl_dataset, whole_dataset):
     def assert_length(dataset):
         # Check if __len__ returns the correct length for the dataset
         assert len(dataset) == dataset.n_images, "Dataset length mismatch"
 
     assert_length(bohs_dataset)
     assert_length(afl_dataset)
+    assert_length(whole_dataset)
 
 
-def test_get_item(bohs_dataset, afl_dataset):
+def test_get_item(bohs_dataset, afl_dataset, whole_dataset):
     def assert_get_item(dataset):
         # Scenario: Test fetching an item
         image, boxes, labels = dataset[0]
@@ -45,9 +53,10 @@ def test_get_item(bohs_dataset, afl_dataset):
 
     assert_get_item(bohs_dataset)
     assert_get_item(afl_dataset)
+    assert_get_item(whole_dataset)
 
 
-def test_get_annotations(bohs_dataset, afl_dataset):
+def test_get_annotations(bohs_dataset, afl_dataset, whole_dataset):
     def assert_get_annotations(dataset, data_folder: str, image_ndx: List[str]):
         for idx in image_ndx:
             boxes, labels = dataset.get_annotations(data_folder, idx)
@@ -59,13 +68,14 @@ def test_get_annotations(bohs_dataset, afl_dataset):
     bohs_data_folder = bohs_config.train_data_folders[0]
     bohs_image_ndxs = [0, 533]
     assert_get_annotations(bohs_dataset, bohs_data_folder, bohs_image_ndxs)
+    assert_get_annotations(whole_dataset, bohs_data_folder, bohs_image_ndxs)
 
     afl_data_folder = afl_config.train_data_folders[0]
     afl_image_ndxs = [0, 495]
     assert_get_annotations(afl_dataset, afl_data_folder, afl_image_ndxs)
 
 
-def test_get_elems_with_ball(bohs_dataset, afl_dataset):
+def test_get_elems_with_ball(bohs_dataset, afl_dataset, whole_dataset):
     def assert_get_elems_with_ball(dataset):
         elems_with_ball = dataset.get_elems_with_ball()
         assert type(elems_with_ball) == list, "Should return a list"
@@ -76,3 +86,4 @@ def test_get_elems_with_ball(bohs_dataset, afl_dataset):
 
     assert_get_elems_with_ball(bohs_dataset)
     assert_get_elems_with_ball(afl_dataset)
+    assert_get_elems_with_ball(whole_dataset)
