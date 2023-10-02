@@ -16,7 +16,7 @@ BALL_LABEL: int = 1
 class CVATBallDataset(torch.utils.data.Dataset):
     def __init__(
             self,
-            dataset_path: str,
+            base_data_path: str,
             transform: Union[augmentation.TrainAugmentation, augmentation.NoAugmentation],
             training_data_folders: List[str],
             only_ball_frames: bool = False,
@@ -34,7 +34,7 @@ class CVATBallDataset(torch.utils.data.Dataset):
         :param dataset_size: The size of the dataset to use if not using whole_dataset.
         :param transform: The transform to apply to the dataset.
         """
-        self.dataset_path = dataset_path
+        self.base_data_path = base_data_path
         self.only_ball_frames = only_ball_frames
         self.whole_dataset = whole_dataset
         self.dataset_size = dataset_size
@@ -45,12 +45,15 @@ class CVATBallDataset(torch.utils.data.Dataset):
         self.gt_annotations: dict = {}
         self.image_list: list = []
 
+        # TODO: see if we need this
+        self.randomize_small_batches: bool = False
+
         # The folder paths we will be using.
-        self.image_folder_path = os.path.join(self.dataset_path, 'unpacked_jpg')
-        self.annotations_folder_path = os.path.join(self.dataset_path, 'annotations')
+        self.image_folder_path = os.path.join(self.base_data_path, 'unpacked_jpg')
+        self.annotations_folder_path = os.path.join(self.base_data_path, 'annotations')
 
         assert transform is not None, "Transform must be specified"
-        assert self.video_paths is not None, "No video paths passed to dataset initialization"
+        assert self.training_data_folders is not None, "No video paths passed to dataset initialization"
 
         self._load_annotations_and_image()
         self.n_images = len(self.image_list)
@@ -165,7 +168,8 @@ class CVATBallDataset(torch.utils.data.Dataset):
 
 
 def create_dataset_from_config(conf: BaseConfig) -> CVATBallDataset:
-    dataset_paths: List[str] = conf.train_data_folders
+    base_data_path: str = conf.base_data_path
+    training_data_folders: List[str] = conf.train_data_folders
     whole_dataset: bool = conf.whole_dataset
     only_ball_frames: bool = conf.only_ball_frames
     dataset_size: int = conf.dataset_size
@@ -180,7 +184,8 @@ def create_dataset_from_config(conf: BaseConfig) -> CVATBallDataset:
         print("creating Bohs Dataset with **no** augmentations (besides normalization)")
 
     return create_dataset(
-        dataset_paths=dataset_paths,
+        base_data_path=base_data_path,
+        training_data_folders=training_data_folders,
         whole_dataset=whole_dataset,
         transform=transform,
         only_ball_frames=only_ball_frames,
@@ -191,7 +196,8 @@ def create_dataset_from_config(conf: BaseConfig) -> CVATBallDataset:
 
 
 def create_dataset(
-            dataset_paths: List[str],
+            base_data_path: str,
+            training_data_folders: List[str],
             whole_dataset: bool,
             transform,
             only_ball_frames: bool = False,
@@ -200,7 +206,8 @@ def create_dataset(
             image_name_length: int = 7,
 ) -> CVATBallDataset:
     return CVATBallDataset(
-        dataset_path=dataset_paths,
+        base_data_path=base_data_path,
+        training_data_folders=training_data_folders,
         only_ball_frames=only_ball_frames,
         whole_dataset=whole_dataset,
         dataset_size=dataset_size,
