@@ -33,37 +33,44 @@ def test_length(bohs_dataset, afl_dataset):
     assert_length(afl_dataset)
 
 
-def test_get_item():
-    dataset_path = '/path/to/dataset'
-    transform = NoAugmentation(size=300)
-    dataset = CVATBallDataset(dataset_path=dataset_path, transform=transform)
+def test_get_item(bohs_dataset, afl_dataset):
+    def assert_get_item(dataset):
+        # Scenario: Test fetching an item
+        image, boxes, labels = dataset[0]
+        assert image is not None, "Image should not be None"
+        assert boxes is not None, "Boxes should not be None"
+        assert labels is not None, "Labels should not be None"
 
-    # Scenario 1: Test fetching an item
-    image, boxes, labels = dataset[0]
-    assert image is not None, "Image should not be None"
-    assert boxes is not None, "Boxes should not be None"
-    assert labels is not None, "Labels should not be None"
-
-
-def test_get_annotations():
-    dataset_path = '/path/to/dataset'
-    transform = NoAugmentation(size=300)
-    dataset = CVATBallDataset(dataset_path=dataset_path, transform=transform)
-
-    # Scenario 1: Test getting annotations
-    boxes, labels = dataset.get_annotations('camera_id', 'image_ndx')
-    assert type(boxes) == np.ndarray, "Boxes should be numpy array"
-    assert type(labels) == np.ndarray, "Labels should be numpy array"
+    assert_get_item(bohs_dataset)
+    assert_get_item(afl_dataset)
 
 
-def test_get_elems_with_ball():
-    dataset_path = '/path/to/dataset'
-    transform = NoAugmentation(size=300)
-    dataset = CVATBallDataset(dataset_path=dataset_path, transform=transform)
+def test_get_annotations(bohs_dataset, afl_dataset):
+    def assert_get_annotations(dataset, data_folder, image_ndx=0):
+        boxes, labels = dataset.get_annotations(data_folder, image_ndx)
+        assert type(boxes) == np.ndarray, "Boxes should be numpy array"
+        assert type(labels) == np.ndarray, "Labels should be numpy array"
 
-    # Scenario 1: Test fetching elements with ball
-    elems_with_ball = dataset.get_elems_with_ball()
-    assert type(elems_with_ball) == list, "Should return a list"
+    # NDX values here are hardcoded to contain a sample with no label, and with a label respectively
+
+    bohs_data_folder = bohs_config.train_data_folders[0]
+    bohs_image_ndxs = [0, 533]
+    for bohs_image_ndx in bohs_image_ndxs:
+        assert_get_annotations(bohs_dataset, bohs_data_folder, bohs_image_ndx)
+
+    afl_data_folder = afl_config.train_data_folders[0]
+    afl_image_ndx = [0, 495]
+    for afl_image_ndx in afl_image_ndx:
+        assert_get_annotations(afl_dataset, afl_data_folder, afl_image_ndx)
+
+
+def test_get_elems_with_ball(bohs_dataset, afl_dataset):
+    def assert_get_elems_with_ball(dataset):
+        elems_with_ball = dataset.get_elems_with_ball()
+        assert type(elems_with_ball) == list, "Should return a list"
+
+    assert_get_elems_with_ball(bohs_dataset)
+    assert_get_elems_with_ball(afl_dataset)
 
 
 # Running tests
