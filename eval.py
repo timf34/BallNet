@@ -15,7 +15,7 @@ from typing import List, Tuple, Dict
 from config import Config
 from data.data_reader import make_dataloaders, make_eval_dataloader
 from network.footandball import model_factory
-from data.bohs_utils import eval_single_frame
+from data.cvat_utils import eval_single_frame
 
 class EvalConfig(Config):
     def __init__(self):

@@ -5,7 +5,7 @@ import torch
 import os
 from collections import defaultdict
 
-from config import Config
+from config import BaseConfig
 
 
 class SequenceAnnotations:
@@ -96,7 +96,7 @@ def read_bohs_ground_truth(annotations_path: str, xml_file_name: str) -> Sequenc
     return _create_bohs_annotations(gt)
 
 
-def get_train_val_datasets(dataset: torch.utils.data.Dataset, config: Config) -> Tuple[torch.utils.data.Dataset,
+def get_train_val_datasets(dataset: torch.utils.data.Dataset, config: BaseConfig) -> Tuple[torch.utils.data.Dataset,
                                                                                        torch.utils.data.Dataset]:
     """
         This function is used to get the train and validation datasets from the dataset.
