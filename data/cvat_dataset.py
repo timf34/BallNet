@@ -54,8 +54,14 @@ class CVATBallDataset(torch.utils.data.Dataset):
         self._load_annotations_and_image()
         self.n_images = len(self.image_list)
         self.ball_images_ndx = set(self.get_elems_with_ball())
-        self.no_ball_images_ndx = set([ndx for ndx in range(self.n_images) if ndx not in self.ball_images_ndx])
-        print(f"Total number of Bohs Images: {self.n_images}")
+        self.no_ball_images_ndx = {ndx for ndx in range(self.n_images) if ndx not in self.ball_images_ndx}
+
+        if not self.whole_dataset:
+            assert self.n_images == self.dataset_size_per_training_data_folder * len(self.training_data_folders), \
+                    f"Number of images in dataset ({self.n_images}) does not match expected number of images " \
+                    f"({self.dataset_size_per_training_data_folder * len(self.training_data_folders)})"
+
+        print(f"Total number of CVAT Images: {self.n_images}")
         print(f'BOHS: {format(len(self.ball_images_ndx))} frames with the ball')
         print(f'BOHS: {(len(self.no_ball_images_ndx))} frames without the ball')
         print(f'Whole dataset: {self.whole_dataset}')
