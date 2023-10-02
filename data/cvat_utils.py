@@ -19,8 +19,11 @@ class SequenceAnnotations:
         # ball_pos contains list of ball positions (x,y) on each frame; multiple balls per frame are possible
         self.ball_pos = defaultdict(list)
 
+def extract_coordinates(points) -> Tuple[int, int]:
+    x, y = map(float, points.attrib['points'].split(','))
+    return int(x), int(y)
 
-def _load_bohs_groundtruth(xml_file_path: str) -> dict:
+def _load_cvat_groundtruth(xml_file_path: str) -> dict:
     """
     This function reads and laods the xlm file into a dictionary which we will
     then pass to _create_bohs_annotations...
@@ -41,18 +44,30 @@ def _load_bohs_groundtruth(xml_file_path: str) -> dict:
     # print("atribbute", root.attrib)  # {}
 
     gt = {"BallPos": []}
+
+    # Handle XML structure with "frame" attributes (from videos uploaded to CVAT)
     for child in root:
         for subchild in child:
             if "frame" in subchild.attrib:
                 # print("frame:", subchild.attrib['frame'], "x:", subchild.attrib['points'].split(',')[0], "y:",  \
                 # subchild.attrib['points'].split(',')[1])
+
                 frame = int(subchild.attrib['frame'])
-                # We convert the string first to a float, and then to an int
-                x = int(float(subchild.attrib['points'].split(',')[0]))
-                y = int(float(subchild.attrib['points'].split(',')[1]))
+                x, y = extract_coordinates(subchild)
 
                 # We put frame in twice simply to match FootAndBall dataloader
                 gt["BallPos"].append([frame, frame, x, y])
+
+    # Handle XML structure with "frame" attributes (from folders of images uploaded to CVAT)
+    for image in root.findall('image'):
+        image_id = int(image.attrib['id'])
+
+        for points in image.findall('points'):
+            if points.attrib['label'] == 'ball':
+                # Extracting x, y coordinates from points
+                x, y = extract_coordinates(points)
+                # Append to the dictionary
+                gt["BallPos"].append([image_id, image_id, x, y])
     return gt
 
 
@@ -92,7 +107,7 @@ def read_bohs_ground_truth(annotations_path: str, xml_file_name: str) -> Sequenc
     :params xml_file_name: name of the xml file
     """
     xml_file_path = os.path.join(annotations_path, xml_file_name)
-    gt = _load_bohs_groundtruth(xml_file_path)
+    gt = _load_cvat_groundtruth(xml_file_path)
     return _create_bohs_annotations(gt)
 
 
@@ -215,7 +230,20 @@ def eval_single_frame(
     return precision, recall, correctly_classified
 
 
+def reading_afl_xml() -> None:
+    # Just for development purposes
+    track_id_xml_path: str = r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\annotations\marvel_3_time_04_09_06_date_20_08_2023_4.xml"
+    image_id_xml_path: str = r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\annotations\marvel_1_time_04_09_04_date_20_08_2023_0.xml"
+
+    track_id_xml = _load_cvat_groundtruth(track_id_xml_path)
+    print(f"track_id_xml: \n {track_id_xml}")
+
+    image_id_xml = _load_cvat_groundtruth(image_id_xml_path)
+    print(f"image_id_xml: \n {image_id_xml}")
+
+
 if __name__ == '__main__':
     print("oh no")
+    reading_afl_xml()
     print("oh yes")
 
