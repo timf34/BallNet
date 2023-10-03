@@ -6,15 +6,16 @@ Some general TODOs for this file:
 """
 import random
 import torch
+
 from torch.utils.data import Sampler, DataLoader, ConcatDataset, Subset
+from typing import List, Dict
 
-from misc.legacy.issia_dataset import create_issia_dataset, IssiaDataset
-from data.bohs_dataset import create_bohs_dataset, BohsDataset
-from config import Config
-from data.bohs_utils import get_train_val_datasets
+from data.cvat_dataset import create_dataset_from_config, CVATBallDataset
+from config import BaseConfig
+from data.cvat_utils import get_train_val_datasets
 
 
-def make_train_val_dataloaders(config: Config) -> dict:
+def make_train_val_dataloaders(config: BaseConfig) -> dict:
     """
     This is not the cleanest implementation but we will clean it up later - doesn't matter for now
 
@@ -22,73 +23,74 @@ def make_train_val_dataloaders(config: Config) -> dict:
     :param config: The configuration object.
     :return: A dictionary containing the training and validation dataloaders.
     """
-    # TODO: in this current way we are doing it, the validation dataset will have the same augmentations as the
-    #  training dataset. This will do for now but going forward I will need to come back and clean this all up!
-    #  The main reason for this not being good is that we don't any clear control over the transforms atm
+    # TODO: note, right now, the validation dataset will have the same augemntations as the trianing dataset.
+    #  Fix this soon. I would want to be able to specify NoAugs for val I would think.
 
-    if config.bohs_path is not None:
-        bohs_dataset = create_bohs_dataset(
-            conf=config,
-            dataset_path=config.bohs_path,
-            whole_dataset=config.whole_dataset,
-            only_ball_frames=config.only_ball_frames,
-            dataset_size=config.dataset_size,
-            use_augs=config.use_augmentation,
-            )
-        train_dataset, val_dataset = get_train_val_datasets(bohs_dataset, config=config)
-
-        train_dataset = ConcatDataset([train_dataset])
-        val_dataset = ConcatDataset([val_dataset])
-
-        return {'train': DataLoader(train_dataset,
-                                    # sampler=BalancedSampler(train_dataset, quick_fix_for_train_val_split=True),
-                                    shuffle=True,
-                                    batch_size=config.batch_size,
-                                    num_workers=config.num_workers,
-                                    pin_memory=True,
-                                    collate_fn=my_collate),
-                'val': DataLoader(val_dataset,
-                                  # sampler=BalancedSampler(val_dataset, quick_fix_for_train_val_split=True),
-                                  shuffle=True,
-                                  batch_size=config.batch_size,
-                                  num_workers=config.num_workers,
-                                  pin_memory=True,
-                                  collate_fn=my_collate)}
-
-
-def make_dataloaders(config: Config):
-    if config.bohs_path is not None:
-        train_bohs_dataset = create_bohs_dataset(
-            conf = config,
-            dataset_path=config.bohs_path,
-            whole_dataset=config.whole_dataset,
-            only_ball_frames=config.only_ball_frames,
-            dataset_size=config.dataset_size,
-            use_augs=config.use_augmentation
+    cvat_dataset = create_dataset_from_config(
+        conf=config,
         )
-        train_dataset = ConcatDataset([train_bohs_dataset])
-        return {'train': DataLoader(train_dataset,
-                                    # shuffle=True,  # Note: Cannot use shuffle and sampler together!
-                                    sampler=BalancedSampler(train_dataset),
-                                    batch_size=config.batch_size,
-                                    num_workers=config.num_workers,
-                                    pin_memory=True,
-                                    collate_fn=my_collate)}
+    train_dataset, val_dataset = get_train_val_datasets(cvat_dataset, config=config)
+
+    train_dataset = ConcatDataset([train_dataset])
+    val_dataset = ConcatDataset([val_dataset])
+
+    return {
+        'train': DataLoader(
+            train_dataset,
+            # sampler=BalancedSampler(train_dataset, quick_fix_for_train_val_split=True),
+            shuffle=True,
+            batch_size=config.batch_size,
+            num_workers=config.num_workers,
+            pin_memory=True,
+            collate_fn=my_collate
+        ),
+        'val': DataLoader(
+            val_dataset,
+            # sampler=BalancedSampler(val_dataset, quick_fix_for_train_val_split=True),
+            shuffle=True,
+            batch_size=config.batch_size,
+            num_workers=config.num_workers,
+            pin_memory=True,
+            collate_fn=my_collate
+        )
+    }
 
 
-def make_eval_dataloader(config: Config) -> BohsDataset:
+def make_dataloaders(config: BaseConfig) -> Dict[str, DataLoader]:
+    train_bohs_dataset = create_dataset_from_config(
+        conf = config,
+    )
+    train_dataset = ConcatDataset([train_bohs_dataset])
+    return {
+        'train': DataLoader(
+            train_dataset,
+            # shuffle=True,  # Note: Cannot use shuffle and sampler together!
+            sampler=BalancedSampler(train_dataset),
+            batch_size=config.batch_size,
+            num_workers=config.num_workers,
+            pin_memory=True,
+            collate_fn=my_collate
+        )
+    }
+
+
+def make_eval_dataloader(config: BaseConfig) -> DataLoader:
     """
     This function creates the dataloader for the evaluation script.
     """
-    return create_bohs_dataset(
+    # TODO: ensure augs are not used for the evaluation script
+    #  i.e. NoAugs
+    config.use_augmentations = False
+    dataset =  create_dataset_from_config(
         conf=config,
-        dataset_path=config.bohs_path,
-        whole_dataset=config.whole_dataset,
-        only_ball_frames=config.only_ball_frames,
-        dataset_size=config.dataset_size,
-        use_augs=False
     )
-
+    return DataLoader(
+        dataset,
+        batch_size=config.batch_size,
+        num_workers=config.num_workers,
+        pin_memory=True,
+        collate_fn=my_collate
+    )
 
 
 def my_collate(batch):
@@ -100,20 +102,33 @@ def my_collate(batch):
     return images, boxes, labels
 
 
-# TODO: for now add a quick fix (ie an if else) for accessing the attributes within the subset class... this might
-#  cause a lot of problems further in (I can't make this fix everywhere!)
-#  Note: that the real quick fix is me checking for isinstance(x, Subset)
-# I'll try this quick fix here for now
-# For some reason it wouldn't actually allow me to add/ use the quick fix as an attribute...?
+def collate_fn(batch):
+    """Custom collate fn for dealing with batches of images that have a different
+    number of associated object annotations (bounding boxes).
 
+    Arguments:
+        batch: (tuple) A tuple of tensor images and lists of annotations
+
+    Return:
+        A tuple containing:
+            1) (tensor) batch of images stacked on their 0 dim
+            2) (list of tensors) annotations for a given image are stacked on
+                                 0 dim
+    """
+    images, targets = zip(*batch)
+    return torch.stack(images, 0), targets
+
+
+# Note: I'll come back to this for refactoring later as we won't be using it right now, and its quite a mess.
 class BalancedSampler(Sampler):
     # Sampler sampling the same number of frames with and without the ball
-    def __init__(self, data_source, quick_fix_for_train_val_split=False):
+    # TODO: we can't us this right now as our dataset only contains the ball, but I should experiment trianing without
+    # images of the ball at some point soon too.
+    def __init__(self, data_source):
         super().__init__(data_source)
         self.data_source = data_source
         self.sample_ndx = []
         self.generate_samples()
-        self.quick_fix_for_train_val_split = quick_fix_for_train_val_split
 
     def generate_samples(self):
         # Sample generation function expects concatenation of 2 datasets: one is ISSIA CNR and the other is SPD
@@ -124,20 +139,18 @@ class BalancedSampler(Sampler):
         # TODO: ok so this is another quick fix I will have to deal with later.
         if isinstance(self.data_source, Subset):
             for ndx, ds in enumerate(self.data_source.dataset.datasets):
-                # TODO: added it here.
-                if isinstance(ds, BohsDataset) or isinstance(ds, Subset):
+                if isinstance(ds, CVATBallDataset) or isinstance(ds, Subset):
                     bohs_dataset_ndx = ndx
-                    # TODO: get rid of IssiaDataset class here
-                if isinstance(ds, IssiaDataset):
+                if isinstance(ds, CVATBallDataset):
                     issia_dataset_ndx = ndx
                 else:
                     spd_dataset_ndx = ndx
         else:
             for ndx, ds in enumerate(self.data_source.datasets):
                 # TODO: added it here.
-                if isinstance(ds, BohsDataset) or isinstance(ds, Subset):
+                if isinstance(ds, CVATBallDataset) or isinstance(ds, Subset):
                     bohs_dataset_ndx = ndx
-                if isinstance(ds, IssiaDataset):
+                if isinstance(ds, CVATBallDataset):
                     issia_dataset_ndx = ndx
                 else:
                     spd_dataset_ndx = ndx
@@ -190,20 +203,3 @@ class BalancedSampler(Sampler):
 
     def __len(self):
         return len(self.sample_ndx)
-
-
-def collate_fn(batch):
-    """Custom collate fn for dealing with batches of images that have a different
-    number of associated object annotations (bounding boxes).
-
-    Arguments:
-        batch: (tuple) A tuple of tensor images and lists of annotations
-
-    Return:
-        A tuple containing:
-            1) (tensor) batch of images stacked on their 0 dim
-            2) (list of tensors) annotations for a given image are stacked on
-                                 0 dim
-    """
-    images, targets = zip(*batch)
-    return torch.stack(images, 0), targets
