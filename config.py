@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Tuple, List
+from typing import Tuple, List, Dict
 import os
 import time
 
@@ -148,13 +148,6 @@ class AWSTrainConfig(AWSBaseConfig):
     epochs: int = 20
     whole_dataset: bool = True
     dataset_size_per_training_data_folder: int = -1  # Just a placeholder
-
-    def __post_init__(self):
-        # TODO: need to add full paths
-        self.train_data_folders: List[str] = [
-            "jetson1_date_24_02_2023_time__19_45_01_43",
-            "jetson1_date_24_02_2023_time__19_45_01_17",
-        ]  # Full training paths on AWS
 
 
 @dataclass
