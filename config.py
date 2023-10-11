@@ -49,8 +49,6 @@ class BaseConfig:
     base_data_path: str = None  # Set in child class
     whole_dataset: bool = None  # Set in child class
 
-    train_data_folders: List[str] = field(default=None)  # List of paths to videos for training and testing
-
     # Debugging params
     save_every_n_epochs: int = 5
     save_weights_when_testing: bool = False
@@ -84,16 +82,12 @@ class LaptopConfig(BaseConfig):
     use_augmentations: bool = False
 
 
+
 @dataclass
 class AFLLaptopConfig(LaptopConfig):
     image_extension: str = '.png'
     base_data_path: str = r'C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed'
 
-    def __post_init__(self):
-        self.train_data_folders: List[str] = [
-            "marvel_1_time_04_09_04_date_20_08_2023_0",
-            "marvel_1_time_04_09_04_date_20_08_2023_2",
-        ]  # Just for testing on laptop
 
 
 @dataclass
