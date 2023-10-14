@@ -1,5 +1,5 @@
-from dataclasses import dataclass, field
-from typing import Tuple, List, Optional
+from dataclasses import dataclass
+from typing import Tuple, List, Dict, Union
 import os
 import time
 
@@ -49,7 +49,7 @@ class BaseConfig:
     weights: str = r'C:\Users\timf3\PycharmProjects\BallNet2.0\models\model_20210221_2206_final.pth'
     base_data_path: str = None  # Set in child class
     whole_dataset: bool = None  # Set in child class
-    data_folder_paths: Optional[List[str]] = None  # For hardcoding folders to use during traing if useing subset
+    data_folder_paths: Union[List[str], Dict[str, List[str]], None] = None  # We use a Dict for AFLConfig and a List for BohsConfig
 
     # Debugging params
     save_every_n_epochs: int = 5
@@ -77,7 +77,7 @@ class BaseConfig:
 class LaptopConfig(BaseConfig):
     """Config for local development on laptop"""
     # Training params
-    epochs: int = 5
+    epochs: int = 50
     save_weights: bool = True
 
     # Data params
@@ -96,10 +96,19 @@ class AFLLaptopConfig(LaptopConfig):
     base_data_path: str = r'C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed'
 
     def __post_init__(self):
-        self.data_folder_paths: List[str] = [
-            "marvel_1_time_04_09_04_date_20_08_2023_2",
-            "marvel_1_time_04_09_04_date_20_08_2023_4",
-        ]  # Just for testing on laptop
+        self.data_folder_paths: Dict[str, List[str]] = {
+            "train": [
+                "marvel_1_time_04_09_04_date_20_08_2023_0",
+                "marvel_1_time_04_09_04_date_20_08_2023_3",
+            ],
+            "val": [
+                "marvel_1_time_04_09_04_date_20_08_2023_2",
+                # "marvel_3_time_04_09_04_date_20_08_2023_4",
+            ]
+        }
+
+
+              # Just for testing on laptop
 
 @dataclass
 class BohsLaptopConfig(LaptopConfig):

@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Union, Dict
 from PIL import Image
 import torch
 import os
@@ -201,7 +201,7 @@ def create_dataset_from_config(
     use_augs = conf.use_augmentations
 
     if use_hardcoded_data_folders:
-        data_folder_paths: List[str] = conf.data_folder_paths
+        data_folder_paths: List[str] = conf.data_folder_paths[training_mode] if "bohs" not in base_data_path else conf.data_folder_paths
         assert data_folder_paths is not None, "data_folder_paths must be set if use_hardcoded_data_folders is True"
     else:
         data_folder_paths: List[str] = get_data_folders_for_mode(training_mode, base_data_path)

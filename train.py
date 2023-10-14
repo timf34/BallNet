@@ -91,13 +91,13 @@ def train_model(
                         optimizer.step()
 
                         # Statistics/ wandb logging
-                        batch_stats['training_loss'].append(loss.item())
+                        batch_stats.setdefault('training_loss', []).append(loss.item())
 
                         if count_batches % 20 == 0:
                             wandb.log({"epoch": epoch, "training_loss": loss.item(), "loss_ball_c": loss_c_ball.item()})
 
                     elif phase == 'val':
-                        batch_stats['validation_loss'].append(loss.item())
+                        batch_stats.setdefault('validation_loss', []).append(loss.item())
                         if count_batches % 20 == 0:
                             wandb.log({"epoch": epoch, "val_loss": loss.item(), "val_loss_ball_c": loss_c_ball.item()})
 
@@ -195,6 +195,6 @@ def save_model_weights(model, epoch: int, config: BaseConfig) -> None:
 
 
 if __name__ == '__main__':
-    config = AFLLaptopConfig()
+    config = BohsLaptopConfig()
     config.pretty_print()
     train(config)
