@@ -77,13 +77,16 @@ class BaseConfig:
 class LaptopConfig(BaseConfig):
     """Config for local development on laptop"""
     # Training params
-    epochs: int = 10
+    epochs: int = 5
     save_weights: bool = True
 
     # Data params
     whole_dataset: bool = False
     dataset_size_per_training_data_folder: int = 2
     use_augmentations: bool = False
+
+    # Misc
+    aws: bool = False
 
 
 
@@ -138,7 +141,7 @@ class AWSTestConfig(AWSBaseConfig):
     """Config for testing on AWS"""
     num_workers: int = 0
     epochs: int = 10
-    whole_dataset: bool = False
+    whole_datasetwhole_dataset: bool = False
     dataset_size_per_training_data_folder: int = 2
 
 
