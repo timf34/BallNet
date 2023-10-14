@@ -35,7 +35,6 @@ def set_seed(seed=42) -> None:
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed(seed)
-        torch.backends.cudnn.deterministic = True
 
 def wandb_setup(model, criterion) -> None:
     wandb.init(
