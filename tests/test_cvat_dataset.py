@@ -11,9 +11,6 @@ bohs_config = BohsLaptopConfig()
 afl_config = AFLLaptopConfig()
 whole_dataset_config = BohsLaptopConfig()
 
-bohs_config.training_mode = "train"
-afl_config.training_mode = "val"
-whole_dataset_config.training_mode = "test"
 whole_dataset_config.whole_dataset = True
 
 
