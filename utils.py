@@ -1,7 +1,10 @@
+import cv2
 import os
 import torch
 
 from config import BaseConfig
+
+BALL_LABEL = 1
 
 
 def create_directory(directory: str) -> None:
@@ -41,3 +44,23 @@ def save_model_weights(model, epoch: int, config: BaseConfig) -> None:
     if config.aws:
         checkpoint_filepath = get_model_filepath(config.checkpoints_folder, config.model_name, epoch)
         save_weights_to_path(model, checkpoint_filepath)
+
+
+# TODO: add typing
+def draw_bboxes(image, detections):
+    """
+    Draw bounding boxes on the image
+    :param image: image to draw bounding boxes on, numpy array
+    :param detections: dictionary with bounding boxes
+    """
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    for box, label, score in zip(detections['boxes'], detections['labels'], detections['scores']):
+        if label == BALL_LABEL:
+            x1, y1, x2, y2 = box
+            x = int((x1 + x2) / 2)
+            y = int((y1 + y2) / 2)
+            color = (0, 0, 255)
+            radius = 12
+            cv2.circle(image, (int(x), int(y)), radius, color, 2)
+            cv2.putText(image, '{:0.2f}'.format(score), (max(0, int(x - radius)), max(0, (y - radius - 10))), font, 1, color, 2)
+    return image
