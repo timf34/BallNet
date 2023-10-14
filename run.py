@@ -27,14 +27,26 @@ inference on.
 class InferenceConfig(BaseConfig):
     image_paths: List[str] = field(default_factory=lambda: [
         r"C:\\Users\\timf3\\PycharmProjects\\AFL-Data\\marvel\\afl-preprocessed\\train\\unpacked_png\\marvel_1_time_04_09_04_date_20_08_2023_0\\frame_0000515.png",
-        r"C:\\Users\\timf3\\PycharmProjects\\AFL-Data\\marvel\\afl-preprocessed\\train\\unpacked_png\\marvel_1_time_04_09_04_date_20_08_2023_3\\frame_0001547.png"
+        r"C:\\Users\\timf3\\PycharmProjects\\AFL-Data\\marvel\\afl-preprocessed\\train\\unpacked_png\\marvel_1_time_04_09_04_date_20_08_2023_0\\frame_0001527.png",
+        r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\train\unpacked_png\marvel_1_time_04_09_04_date_20_08_2023_0\frame_0001528.png",
+        r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\train\unpacked_png\marvel_1_time_04_09_04_date_20_08_2023_3\frame_0001547.png",
+        r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\train\unpacked_png\marvel_1_time_04_09_04_date_20_08_2023_3\frame_0001548.png",
+        r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\train\unpacked_png\marvel_1_time_04_09_04_date_20_08_2023_3\frame_0001549.png"
     ])
-    weights_path: str = r"models/model_14_10_2023__2004/model_14_10_2023__2004_200.pth"
+    # If provided, replaces image_paths with all PNG files in the directory
+    input_image_txt_list: str = r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\train\images_lists\marvel_1_time_04_09_04_date_20_08_2023_4.txt"
+
+    weights_path: str = r"models/model_14_10_2023__2317/model_14_10_2023__2317_30.pth"
 
     device: str = "cuda:0" if torch.cuda.is_available() else "cpu"
     ball_threshold: float = 0.7
 
     def __post_init__(self):
+        if self.input_image_txt_list:
+            with open(self.input_image_txt_list, 'r') as f:
+                self.image_paths.clear()
+                self.image_paths = [line.strip() for line in f]
+
         for image_path in self.image_paths:
             assert os.path.exists(image_path), f'Cannot find image_path: {image_path}'
         assert os.path.exists(self.weights_path), f'Cannot find BohsNet model weights_path: {config.weights_path}'
