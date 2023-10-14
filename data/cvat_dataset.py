@@ -62,9 +62,10 @@ class CVATBallDataset(torch.utils.data.Dataset):
                     f"Number of images in dataset ({self.n_images}) does not match expected number of images " \
                     f"({self.dataset_size_per_training_data_folder * len(self.data_folder_paths)})"
 
+        print(f"Dataset base path: {self.base_data_path}")
         print(f"Total number of CVAT Images: {self.n_images}")
-        print(f'BOHS: {format(len(self.ball_images_ndx))} frames with the ball')
-        print(f'BOHS: {(len(self.no_ball_images_ndx))} frames without the ball')
+        print(f'CVAT: {format(len(self.ball_images_ndx))} frames with the ball')
+        print(f'CVAT: {(len(self.no_ball_images_ndx))} frames without the ball')
         print(f'Whole dataset: {self.whole_dataset}')
 
         if DEBUG:
