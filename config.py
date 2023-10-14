@@ -31,6 +31,7 @@ class BaseConfig:
     save_pickle_training_stats: bool = False
     batch_size: int = 1
     num_workers: int = 0
+    epochs: int = None # Set in child class
 
     # Data params
     only_ball_frames: bool = True
@@ -68,6 +69,8 @@ class BaseConfig:
             raise ValueError("`dataset_size_per_training_data_folder` must be set.")
         if self.base_data_path is None:
             raise ValueError("`base_data_path` must be set.")
+        if self.epochs is None:
+            raise ValueError("`epochs` must be set.")
 
 
 @dataclass
