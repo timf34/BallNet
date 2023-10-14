@@ -60,7 +60,7 @@ def train_model(
 
     print("Training...")
     print(f"Total num epochs: {num_epochs}")
-    for epoch in range(num_epochs):
+    for epoch in range(1, num_epochs + 1):
         # Each epoch has a training and validation phase
         for phase in phases:
             if phase == 'train':
@@ -119,7 +119,6 @@ def train_model(
 
         # Scheduler step
         scheduler.step()
-        save_model_weights(model=model, epoch=epoch, config=config)
 
     # Save final training weights
     save_model_weights(model=model, epoch=epoch, config=config)
@@ -171,6 +170,6 @@ def train(config: BaseConfig):
 
 
 if __name__ == '__main__':
-    config = BohsLaptopConfig()
+    config = AFLLaptopConfig()
     config.pretty_print()
     train(config)
