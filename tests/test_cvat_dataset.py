@@ -10,20 +10,24 @@ from data.cvat_dataset import create_dataset_from_config
 bohs_config = BohsLaptopConfig()
 afl_config = AFLLaptopConfig()
 whole_dataset_config = BohsLaptopConfig()
+
+bohs_config.training_mode = "train"
+afl_config.training_mode = "val"
+whole_dataset_config.training_mode = "test"
 whole_dataset_config.whole_dataset = True
 
 
 @pytest.fixture(scope="module")
 def bohs_dataset():
-    return create_dataset_from_config(bohs_config)
+    return create_dataset_from_config(bohs_config, training_mode="train", use_hardcoded_data_folders=False)
 
 @pytest.fixture(scope="module")
 def afl_dataset():
-    return create_dataset_from_config(afl_config)
+    return create_dataset_from_config(afl_config, training_mode="val", use_hardcoded_data_folders=False)
 
 @pytest.fixture(scope="module")
 def whole_dataset():
-    return create_dataset_from_config(whole_dataset_config)
+    return create_dataset_from_config(whole_dataset_config, training_mode="test", use_hardcoded_data_folders=False)
 
 def test_initialization(bohs_dataset, afl_dataset, whole_dataset):
     def assert_initialization(dataset):
@@ -65,13 +69,13 @@ def test_get_annotations(bohs_dataset, afl_dataset, whole_dataset):
 
     # NDX values here are hardcoded to contain a sample with no label, and with a label respectively
 
-    bohs_data_folder = bohs_config.train_data_folders[0]
+    bohs_data_folder = bohs_config.data_folder_paths[0]
     bohs_image_ndxs = [0, 533]
     assert_get_annotations(bohs_dataset, bohs_data_folder, bohs_image_ndxs)
     assert_get_annotations(whole_dataset, bohs_data_folder, bohs_image_ndxs)
 
-    afl_data_folder = afl_config.train_data_folders[0]
-    afl_image_ndxs = [0, 495]
+    afl_data_folder = afl_config.data_folder_paths[0]
+    afl_image_ndxs = [0, 108]
     assert_get_annotations(afl_dataset, afl_data_folder, afl_image_ndxs)
 
 
