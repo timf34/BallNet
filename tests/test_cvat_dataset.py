@@ -3,6 +3,8 @@ import pytest
 
 from typing import List
 
+import torch
+
 from config import BohsLaptopConfig, AFLLaptopConfig
 from data.cvat_dataset import create_dataset_from_config
 
@@ -48,9 +50,22 @@ def test_get_item(bohs_dataset, afl_dataset, whole_dataset):
     def assert_get_item(dataset):
         # Scenario: Test fetching an item
         image, boxes, labels = dataset[0]
+
         assert image is not None, "Image should not be None"
+        assert type(image) == torch.Tensor, "Image should be a tensor"
+        assert image.shape in [
+            (3, 1080, 1920),
+            (3, 720, 1280),
+        ], "Image should have shape (3, 1080, 1920) or (3, 720, 1280)"
+
+
         assert boxes is not None, "Boxes should not be None"
+        assert type(boxes) == torch.Tensor, "Boxes should be a tensor"
+        assert boxes.shape[1] == 4, "Boxes should have shape (n_boxes, 4)"
+
         assert labels is not None, "Labels should not be None"
+        assert type(labels) == torch.Tensor, "Labels should be a tensor"
+        assert labels.shape[0] == boxes.shape[0], "Labels should have shape (n_boxes, )"
 
     assert_get_item(bohs_dataset)
     assert_get_item(afl_dataset)
