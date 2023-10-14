@@ -1,6 +1,7 @@
 from tqdm import tqdm
 import pickle
 import os
+import random
 import time
 import wandb
 import numpy as np
@@ -25,7 +26,16 @@ CHECKPOINT_ROOT_DIR = '/opt/ml/checkpoints'
 
 # Ball-related loss and player-related loss are mean losses (loss per one positive example)
 ALPHA_C_BALL: float = 5.
+SEED: int = 42
 
+def set_seed(seed=42) -> None:
+    """Set seed for reproducibility."""
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.backends.cudnn.deterministic = True
 
 def wandb_setup(model, criterion) -> None:
     wandb.init(
@@ -168,6 +178,7 @@ def train(config: BaseConfig):
 
 
 if __name__ == '__main__':
+    set_seed(SEED)
     config = AFLLaptopConfig()
     config.pretty_print()
     train(config)
