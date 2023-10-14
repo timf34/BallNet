@@ -12,85 +12,25 @@ from typing import List, Dict
 
 from data.cvat_dataset import create_dataset_from_config, CVATBallDataset
 from config import BaseConfig
-from data.cvat_utils import get_train_val_datasets
 
-
-def make_train_val_dataloaders(config: BaseConfig) -> dict:
-    """
-    This is not the cleanest implementation but we will clean it up later - doesn't matter for now
-
-    This function creates the dataloaders for the training and validation sets.
-    :param config: The configuration object.
-    :return: A dictionary containing the training and validation dataloaders.
-    """
-    # TODO: note, right now, the validation dataset will have the same augemntations as the trianing dataset.
-    #  Fix this soon. I would want to be able to specify NoAugs for val I would think.
-
-    cvat_dataset = create_dataset_from_config(
-        conf=config,
+def make_data_loader(config: BaseConfig, modes: List[str], use_hardcoded_data_folders: bool) -> Dict[str, DataLoader]:
+    data_loader = {}
+    for mode in modes:
+        assert mode in ['train', 'val', 'test']
+        dataset = create_dataset_from_config(
+            conf=config,
+            training_mode=mode,
+            use_hardcoded_data_folders=use_hardcoded_data_folders,
         )
-    train_dataset, val_dataset = get_train_val_datasets(cvat_dataset, config=config)
-
-    train_dataset = ConcatDataset([train_dataset])
-    val_dataset = ConcatDataset([val_dataset])
-
-    return {
-        'train': DataLoader(
-            train_dataset,
-            # sampler=BalancedSampler(train_dataset, quick_fix_for_train_val_split=True),
+        dataset = ConcatDataset([dataset])  # TODO: remove this line, will need to refactor elsewhere
+        data_loader[mode] = DataLoader(
+            dataset,
+            batch_size=config.batch_size,
             shuffle=True,
-            batch_size=config.batch_size,
             num_workers=config.num_workers,
-            pin_memory=True,
-            collate_fn=my_collate
-        ),
-        'val': DataLoader(
-            val_dataset,
-            # sampler=BalancedSampler(val_dataset, quick_fix_for_train_val_split=True),
-            shuffle=True,
-            batch_size=config.batch_size,
-            num_workers=config.num_workers,
-            pin_memory=True,
-            collate_fn=my_collate
+            collate_fn=collate_fn,
         )
-    }
-
-
-def make_dataloaders(config: BaseConfig) -> Dict[str, DataLoader]:
-    train_bohs_dataset = create_dataset_from_config(
-        conf = config,
-    )
-    train_dataset = ConcatDataset([train_bohs_dataset])
-    return {
-        'train': DataLoader(
-            train_dataset,
-            # shuffle=True,  # Note: Cannot use shuffle and sampler together!
-            sampler=BalancedSampler(train_dataset),
-            batch_size=config.batch_size,
-            num_workers=config.num_workers,
-            pin_memory=True,
-            collate_fn=my_collate
-        )
-    }
-
-
-def make_eval_dataloader(config: BaseConfig) -> DataLoader:
-    """
-    This function creates the dataloader for the evaluation script.
-    """
-    # TODO: ensure augs are not used for the evaluation script
-    #  i.e. NoAugs
-    config.use_augmentations = False
-    dataset =  create_dataset_from_config(
-        conf=config,
-    )
-    return DataLoader(
-        dataset,
-        batch_size=config.batch_size,
-        num_workers=config.num_workers,
-        pin_memory=True,
-        collate_fn=my_collate
-    )
+    return data_loader
 
 
 def my_collate(batch):

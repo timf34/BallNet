@@ -111,19 +111,6 @@ def read_cvat_ground_truth(annotations_path: str, xml_file_name: str) -> Sequenc
     return _create_bohs_annotations(gt)
 
 
-def get_train_val_datasets(dataset: torch.utils.data.Dataset, config: BaseConfig) -> Tuple[torch.utils.data.Dataset,
-                                                                                       torch.utils.data.Dataset]:
-    """
-        This function is used to get the train and validation datasets from the dataset.
-    """
-    train_dataset_length, val_dataset_length = get_train_val_lengths(dataset, config)
-    generator = torch.Generator().manual_seed(0)
-    train_dataset, val_dataset = torch.utils.data.random_split(dataset,
-                                                               (train_dataset_length, val_dataset_length),
-                                                               generator)
-    return train_dataset, val_dataset
-
-
 def get_train_val_lengths(dataset: torch.utils.data.Dataset, config) -> Tuple[int, int]:
     """
         Returns two ints, the lengths of the train/ val dataset for splitting it
