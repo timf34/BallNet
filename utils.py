@@ -8,6 +8,9 @@ def create_directory(directory: str) -> None:
     """Ensure the directory exists. If not, create it."""
     if not os.path.exists(directory):
         os.mkdir(directory)
+        print(f"Folder {directory} was created")
+    else:
+        print(f"Folder {directory} already exists")
 
 
 def save_weights_to_path(model, filepath: str) -> None:
