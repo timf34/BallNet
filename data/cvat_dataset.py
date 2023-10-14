@@ -5,13 +5,14 @@ import os
 import numpy as np
 
 import data.augmentation as augmentation
-from data.cvat_utils import read_cvat_ground_truth, get_folders
 from config import BaseConfig
+from data.cvat_utils import read_cvat_ground_truth, get_folders
+from utils import create_directory
 
 BALL_BBOX_SIZE: int = 20
 BALL_LABEL: int = 1
 DATASET_JUMP: int = 3  # Number of frames to jump into when creating a non-whole dataset
-DEBUG: bool = False
+DEBUG: bool = True
 
 
 class CVATBallDataset(torch.utils.data.Dataset):
@@ -88,10 +89,10 @@ class CVATBallDataset(torch.utils.data.Dataset):
         """Function to create txt files with image paths for debugging"""
         if not self.whole_dataset:
             # Create new folder and copy image paths to it. This is for testing the overfitted model
-            self.create_new_folder('../txt_testing_files')
+            create_directory('./txt_testing_files')
 
             print("Here are the paths to the images:")
-            with open('../txt_testing_files/image_paths.txt', 'w') as f:
+            with open('./txt_testing_files/image_paths.txt', 'w+') as f:
                 for image in self.image_list:
                     print(image)
                     f.write(image[0] + '\n')
