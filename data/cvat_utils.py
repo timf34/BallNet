@@ -230,6 +230,11 @@ def eval_single_frame(
     return precision, recall, correctly_classified
 
 
+def get_folders(dir: str) -> List[str]:
+    """Returns a list of the names of the folders in the given directory"""
+    return [f for f in os.listdir(dir) if os.path.isdir(os.path.join(dir, f))]
+
+
 if __name__ == '__main__':
     print("oh no")
     print("oh yes")
