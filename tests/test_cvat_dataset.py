@@ -74,7 +74,7 @@ def test_get_annotations(bohs_dataset, afl_dataset, whole_dataset):
     assert_get_annotations(bohs_dataset, bohs_data_folder, bohs_image_ndxs)
     assert_get_annotations(whole_dataset, bohs_data_folder, bohs_image_ndxs)
 
-    afl_data_folder = afl_config.data_folder_paths[0]
+    afl_data_folder = afl_config.data_folder_paths[0]  # Note: set up for vals folder rn
     afl_image_ndxs = [0, 108]
     assert_get_annotations(afl_dataset, afl_data_folder, afl_image_ndxs)
 
