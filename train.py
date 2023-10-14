@@ -26,8 +26,6 @@ CHECKPOINT_ROOT_DIR = '/opt/ml/checkpoints'
 # Ball-related loss and player-related loss are mean losses (loss per one positive example)
 ALPHA_C_BALL: float = 5.
 
-torch.manual_seed(42)
-
 
 def wandb_setup(model, criterion) -> None:
     wandb.init(
