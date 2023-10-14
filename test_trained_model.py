@@ -5,7 +5,7 @@ import torch
 import torch.backends.cudnn as cudnn
 
 from network import footandball
-from data.data_reader import make_dataloaders
+from data.cvat_dataloaders import make_dataloaders
 from config import Config
 from data.augmentation import numpy2tensor, tensor2image, heatmap2image
 from scripts.run_and_eval_utils import draw_bboxes

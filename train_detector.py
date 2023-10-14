@@ -11,7 +11,7 @@ import torch.optim as optim
 import torch.backends.cudnn as cudnn
 
 from network import footandball
-from data.data_reader import make_dataloaders, make_train_val_dataloaders
+from data.cvat_dataloaders import make_dataloaders, make_train_val_dataloaders
 from network.ssd_loss import SSDLoss
 from config import Config
 from misc.legacy.training_utils import debugging_ball_feature_maps
