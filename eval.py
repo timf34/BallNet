@@ -13,7 +13,7 @@ import torch
 from typing import List, Tuple, Dict
 
 from config import Config
-from data.data_reader import make_dataloaders, make_eval_dataloader
+from data.cvat_dataloaders import make_dataloaders, make_eval_dataloader
 from network.footandball import model_factory
 from data.cvat_utils import eval_single_frame
 
