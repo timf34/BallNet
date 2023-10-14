@@ -1,5 +1,7 @@
 import cv2
+import numpy as np
 import os
+import random
 import torch
 
 from config import BaseConfig
@@ -64,3 +66,11 @@ def draw_bboxes(image, detections):
             cv2.circle(image, (int(x), int(y)), radius, color, 2)
             cv2.putText(image, '{:0.2f}'.format(score), (max(0, int(x - radius)), max(0, (y - radius - 10))), font, 1, color, 2)
     return image
+
+def set_seed(seed=42) -> None:
+    """Set seed for reproducibility."""
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)

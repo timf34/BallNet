@@ -1,17 +1,13 @@
-from tqdm import tqdm
-import pickle
 import os
 import random
-import time
-import wandb
-import numpy as np
+from typing import List, Dict
 
+import numpy as np
 import torch
 import torch.optim as optim
 import torch.backends.cudnn as cudnn
 from torch.utils.data import DataLoader
-
-from typing import List, Dict
+import wandb
 
 from network import footandball
 from data.cvat_dataloaders import make_data_loader
@@ -28,13 +24,7 @@ CHECKPOINT_ROOT_DIR = '/opt/ml/checkpoints'
 ALPHA_C_BALL: float = 5.
 SEED: int = 42
 
-def set_seed(seed=42) -> None:
-    """Set seed for reproducibility."""
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed(seed)
+
 
 def wandb_setup(model, criterion) -> None:
     wandb.init(
