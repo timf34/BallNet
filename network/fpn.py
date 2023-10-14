@@ -38,38 +38,6 @@ def make_modules(cfg, batch_norm=False):
 
     return modules, out_channels
 
-def make_dsc_modules(cfg, batch_norm=False):
-    # Each module is a list of sequential layers operating at the same spacial dimension followed by MaxPool2d
-    modules = nn.ModuleList()
-    # Number of output channels in each module
-    out_channels = []
-
-    in_channels = 3
-    layers = []
-
-    for v in cfg:
-        if v == 'M':
-            layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
-            # Create new module with accumulated layers and flush layers list
-            modules.append(nn.Sequential(*layers))
-            out_channels.append(in_channels)
-            layers = []
-        else:
-            if batch_norm:
-                depthwise = nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1, groups=in_channels,
-                                      bias=False)
-                pointwise = nn.Conv2d(in_channels, v, kernel_size=1, bias=False)
-                layers += [depthwise, pointwise, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
-            else:
-                conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
-                layers += [conv2d, nn.ReLU(inplace=True)]
-            in_channels = v
-
-    # 'M' should be the last layer - and all layers should be flushed
-    assert len(layers) == 0
-
-    return modules, out_channels
-
 
 class FPN(nn.Module):
     def __init__(self, layers, out_channels, lateral_channels, return_layers=None):
