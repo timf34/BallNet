@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Tuple, List, Dict
+from typing import Tuple, List, Optional
 import os
 import time
 
@@ -48,6 +48,7 @@ class BaseConfig:
     weights: str = r'C:\Users\timf3\PycharmProjects\BallNet2.0\models\model_20210221_2206_final.pth'
     base_data_path: str = None  # Set in child class
     whole_dataset: bool = None  # Set in child class
+    data_folder_paths: Optional[List[str]] = None  # For hardcoding folders to use during traing if useing subset
 
     # Debugging params
     save_every_n_epochs: int = 5
@@ -88,14 +89,18 @@ class AFLLaptopConfig(LaptopConfig):
     image_extension: str = '.png'
     base_data_path: str = r'C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed'
 
-
+    def __post_init__(self):
+        self.data_folder_paths: List[str] = [
+            "marvel_1_time_04_09_04_date_20_08_2023_2",
+            "marvel_1_time_04_09_04_date_20_08_2023_4",
+        ]  # Just for testing on laptop
 
 @dataclass
 class BohsLaptopConfig(LaptopConfig):
     image_extension: str = '.jpg'
     base_data_path: str = r'C:\Users\timf3\OneDrive - Trinity College Dublin\Documents\Documents\datasets\Datasets\Bohs\bohs-preprocessed'
     def __post_init__(self):
-        self.train_data_folders: List[str] = [
+        self.data_folder_paths: List[str] = [
                 "jetson1_date_24_02_2023_time__19_45_01_43",
                 "jetson1_date_24_02_2023_time__19_45_01_17",
         ]  # Bohs data, just for testing on laptop
