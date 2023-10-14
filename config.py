@@ -19,7 +19,7 @@ class BaseConfig:
     # Model params
     device: str = 'cuda:0'
     device_type: bool = "cuda"  # Needed for a Torch call it seems
-    lr: float = 1e-4
+    lr: float = 5e-4
 
     # Training parms
     run_validation: bool = True
@@ -52,8 +52,12 @@ class BaseConfig:
     data_folder_paths: Union[List[str], Dict[str, List[str]], None] = None  # We use a Dict for AFLConfig and a List for BohsConfig
 
     # Debugging params
-    save_every_n_epochs: int = 5
+    save_every_n_epochs: int = 10
     save_weights_when_testing: bool = False
+
+    # Mist
+    aws: bool = False
+    checkpoints_folder: str = None
 
     def pretty_print(self) -> None:
         """
@@ -71,22 +75,26 @@ class BaseConfig:
             raise ValueError("`base_data_path` must be set.")
         if self.epochs is None:
             raise ValueError("`epochs` must be set.")
+        if self.aws is None:
+            raise ValueError("`aws` must be set.")
+        if self.checkpoints_folder is None and self.aws is True:
+            raise ValueError("`checkpoints_folder` must be set if using AWS.")
 
 
 @dataclass
 class LaptopConfig(BaseConfig):
     """Config for local development on laptop"""
     # Training params
-    epochs: int = 50
+    epochs: int = 100
     save_weights: bool = True
 
     # Data params
     whole_dataset: bool = False
-    dataset_size_per_training_data_folder: int = 2
+    dataset_size_per_training_data_folder: int = 1
     use_augmentations: bool = False
 
     # Misc
-    aws: bool = False
+    save_weights_when_testing: bool = True
 
 
 
@@ -95,11 +103,14 @@ class AFLLaptopConfig(LaptopConfig):
     image_extension: str = '.png'
     base_data_path: str = r'C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed'
 
+    # Misc
+    save_weights_when_testing: bool = True
+
     def __post_init__(self):
         self.data_folder_paths: Dict[str, List[str]] = {
             "train": [
                 "marvel_1_time_04_09_04_date_20_08_2023_0",
-                "marvel_1_time_04_09_04_date_20_08_2023_3",
+                # "marvel_1_time_04_09_04_date_20_08_2023_3",
             ],
             "val": [
                 "marvel_1_time_04_09_04_date_20_08_2023_2",
@@ -135,13 +146,13 @@ class AWSBaseConfig(BaseConfig):
             self.model_folder = os.environ['SM_MODEL_DIR']
         except KeyError as e:
             raise KeyError('The environment variable SM_MODEL_DIR is not set - ensure you run the file '
-                       '`train_aws_estimator` and not just `train_detector.py`! Otherwise we\'re not using'
+                       '`train_aws_estimator` and not just `train.py`! Otherwise we\'re not using'
                        'AWS and our environment variables won\'t be set.') from e
         try:
             self.bohs_path = os.environ['SM_CHANNEL_TRAINING']  # The `bohs-preprocessed` folder in S3
         except KeyError as e:
             raise KeyError('The environment variable SM_CHANNEL_TRAINING is not set - ensure you run the file '
-                       '`train_aws_estimator` and not just `train_detector.py`! Otherwise we\'re not using'
+                       '`train_aws_estimator` and not just `train.py`! Otherwise we\'re not using'
                        'AWS and our environment variables won\'t be set.') from e
 
 
