@@ -95,7 +95,8 @@ class CVATBallDataset(torch.utils.data.Dataset):
             with open('./txt_testing_files/image_paths.txt', 'w+') as f:
                 for image in self.image_list:
                     print(image)
-                    f.write(image[0] + '\n')
+                    if 'train' in image[0] or 'bohs' in image[0]:
+                        f.write(image[0] + '\n')
         elif os.path.exists('../txt_testing_files'):
             os.rmdir('../txt_testing_files')
 
