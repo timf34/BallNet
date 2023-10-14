@@ -15,7 +15,7 @@ from network.ssd_loss import SSDLoss
 from config import BaseConfig, BohsLaptopConfig, AFLLaptopConfig
 from utils import save_model_weights, set_seed
 
-WANDB_MODE = 'offline'
+WANDB_MODE = 'online'
 WANDB_API_KEY = '83230c40e1c562f3ef56bf082e31911eaaad4ed9'
 os.environ['WANDB_API_KEY'] = WANDB_API_KEY
 CHECKPOINT_ROOT_DIR = '/opt/ml/checkpoints'
@@ -27,9 +27,10 @@ SEED: int = 42
 
 def wandb_setup(model, criterion) -> None:
     wandb.init(
-        project="Local Dev",
-        name="Testing",
-        notes="Testing",
+        project="AFL",
+        name="Local Run - overfitting 51 images - no augs",
+        notes= "Overfitting 51 images locally on laptop - image folder is marvel_1_time_04_09_04_date_20_08_2023_4."
+               "We are not using augmentation",
         mode=WANDB_MODE
     )
     wandb.config.update(config)
@@ -90,7 +91,7 @@ def train_model(
                     loss_key = 'training_loss' if phase == 'train' else 'validation_loss'
                     batch_stats.setdefault(loss_key, []).append(loss.item())
                     if count_batches % 20 == 0:
-                        wandb.log({"epoch": epoch, loss_key: loss.item(), "loss_ball_c": loss_c_ball.item()})
+                        wandb.log({"epoch": epoch, loss_key: loss.item()})
 
                 # Average stats per batch
                 avg_batch_stats: dict = {e: np.mean(batch_stats[e]) for e in batch_stats}
