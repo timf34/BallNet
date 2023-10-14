@@ -13,7 +13,7 @@ from network import footandball
 from data.cvat_dataloaders import make_data_loader
 from network.ssd_loss import SSDLoss
 from config import BaseConfig, BohsLaptopConfig, AFLLaptopConfig
-from utils import save_model_weights
+from utils import save_model_weights, set_seed
 
 WANDB_MODE = 'offline'
 WANDB_API_KEY = '83230c40e1c562f3ef56bf082e31911eaaad4ed9'
@@ -23,7 +23,6 @@ CHECKPOINT_ROOT_DIR = '/opt/ml/checkpoints'
 # Ball-related loss and player-related loss are mean losses (loss per one positive example)
 ALPHA_C_BALL: float = 5.
 SEED: int = 42
-
 
 
 def wandb_setup(model, criterion) -> None:
@@ -88,16 +87,10 @@ def train_model(
                         loss.backward()
                         optimizer.step()
 
-                        # Statistics/ wandb logging
-                        batch_stats.setdefault('training_loss', []).append(loss.item())
-
-                        if count_batches % 20 == 0:
-                            wandb.log({"epoch": epoch, "training_loss": loss.item(), "loss_ball_c": loss_c_ball.item()})
-
-                    elif phase == 'val':
-                        batch_stats.setdefault('validation_loss', []).append(loss.item())
-                        if count_batches % 20 == 0:
-                            wandb.log({"epoch": epoch, "val_loss": loss.item(), "val_loss_ball_c": loss_c_ball.item()})
+                    loss_key = 'training_loss' if phase == 'train' else 'validation_loss'
+                    batch_stats.setdefault(loss_key, []).append(loss.item())
+                    if count_batches % 20 == 0:
+                        wandb.log({"epoch": epoch, loss_key: loss.item(), "loss_ball_c": loss_c_ball.item()})
 
                 # Average stats per batch
                 avg_batch_stats: dict = {e: np.mean(batch_stats[e]) for e in batch_stats}
