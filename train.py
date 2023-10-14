@@ -16,6 +16,7 @@ from network import footandball
 from data.cvat_dataloaders import make_data_loader
 from network.ssd_loss import SSDLoss
 from config import BaseConfig, BohsLaptopConfig, AFLLaptopConfig
+from utils import save_model_weights
 
 WANDB_MODE = 'offline'
 WANDB_API_KEY = '83230c40e1c562f3ef56bf082e31911eaaad4ed9'
@@ -122,7 +123,6 @@ def train_model(
 
     # Save final training weights
     save_model_weights(model=model, epoch=epoch, config=config)
-
     print("\nTraining complete.\n")
 
 
@@ -168,30 +168,6 @@ def train(config: BaseConfig):
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, scheduler_milestones, gamma=0.1)
 
     train_model(model, optimizer, scheduler, config.epochs, dataloaders, device, config)
-
-
-def save_model_weights(model, epoch: int, config: BaseConfig) -> None:
-    """
-        This function creates a folder in the config.model_folder directory with the data and time.
-        Then it saves the model weights to this folder
-    """
-    # Going to save to both the model directory and the checkpoints directory!
-
-    # Only save when on AWS.
-    if config.aws is True:
-        for folder in [config.checkpoints_folder, config.model_folder]:
-            model_folder = os.path.join(folder, f'{config.model_name}')
-
-            if not os.path.exists(model_folder):
-                os.mkdir(model_folder)
-            model_filepath = os.path.join(model_folder, f'{config.model_name}_{epoch}.pth')
-            # Check if the model weights already exist
-            if os.path.exists(model_filepath):
-                print(f'WARNING: Model weights already exist at {model_filepath}... not overwriting')
-                return
-            else:
-                print(f"Saving model weights to: {model_filepath}")
-                torch.save(model.state_dict(), model_filepath)
 
 
 if __name__ == '__main__':
