@@ -19,7 +19,7 @@ class BaseConfig:
     # Model params
     device: str = 'cuda:0'
     device_type: bool = "cuda"  # Needed for a Torch call it seems
-    lr: float = 5e-4
+    lr: float = 3e-4
 
     # Training parms
     run_validation: bool = True
@@ -29,7 +29,7 @@ class BaseConfig:
     neg_pos_ratio: int = 3
     use_augmentations: bool = True
     save_pickle_training_stats: bool = False
-    batch_size: int = 1
+    batch_size: int = 3
     num_workers: int = 0
     epochs: int = None # Set in child class
 
@@ -52,7 +52,7 @@ class BaseConfig:
     data_folder_paths: Union[List[str], Dict[str, List[str]], None] = None  # We use a Dict for AFLConfig and a List for BohsConfig
 
     # Debugging params
-    save_every_n_epochs: int = 10
+    save_every_n_epochs: int = 5
     save_weights_when_testing: bool = False
 
     # Mist
@@ -89,12 +89,14 @@ class LaptopConfig(BaseConfig):
     save_weights: bool = True
 
     # Data params
-    whole_dataset: bool = False
-    dataset_size_per_training_data_folder: int = 1
-    use_augmentations: bool = False
+    whole_dataset: bool = True
+    dataset_size_per_training_data_folder: int = 3
+    use_augmentations: bool = True
+    batch_size: int = 3  # Max batch size for laptop GPU
 
     # Misc
     save_weights_when_testing: bool = True
+    device: str = 'cuda:0'  # Local nvidia GPU locally
 
 
 
@@ -103,18 +105,20 @@ class AFLLaptopConfig(LaptopConfig):
     image_extension: str = '.png'
     base_data_path: str = r'C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed'
 
+    run_validation: bool = True
+
     # Misc
     save_weights_when_testing: bool = True
 
     def __post_init__(self):
         self.data_folder_paths: Dict[str, List[str]] = {
             "train": [
-                "marvel_1_time_04_09_04_date_20_08_2023_0",
-                # "marvel_1_time_04_09_04_date_20_08_2023_3",
+                # "marvel_1_time_04_09_04_date_20_08_2023_0",
+                "marvel_1_time_04_09_04_date_20_08_2023_4",
             ],
             "val": [
-                "marvel_1_time_04_09_04_date_20_08_2023_2",
-                # "marvel_3_time_04_09_04_date_20_08_2023_4",
+                # "marvel_1_time_04_09_04_date_20_08_2023_2",
+                "marvel_3_time_04_09_06_date_20_08_2023_4",
             ]
         }
 
@@ -125,10 +129,11 @@ class AFLLaptopConfig(LaptopConfig):
 class BohsLaptopConfig(LaptopConfig):
     image_extension: str = '.jpg'
     base_data_path: str = r'C:\Users\timf3\OneDrive - Trinity College Dublin\Documents\Documents\datasets\Datasets\Bohs\bohs-preprocessed'
+
     def __post_init__(self):
         self.data_folder_paths: List[str] = [
                 "jetson1_date_24_02_2023_time__19_45_01_43",
-                "jetson1_date_24_02_2023_time__19_45_01_17",
+                # "jetson1_date_24_02_2023_time__19_45_01_17",
         ]  # Bohs data, just for testing on laptop
 
 
