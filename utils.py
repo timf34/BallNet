@@ -4,7 +4,10 @@ import os
 import random
 import torch
 
+from typing import List
+
 from config import BaseConfig
+
 
 BALL_LABEL = 1
 
