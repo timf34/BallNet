@@ -1,15 +1,3 @@
-"""
-What do we need:
-
-- CVATEval
-    - Encapsulates the Eval logic
-- CVATDataLoader
-- BallNet
-
-Functionality:
-
-- Load the dataloader and specify eval/ test mode (just do "test" for now)
-"""
 import torch
 
 from dataclasses import dataclass
@@ -24,8 +12,9 @@ from utils import set_seed
 SEED: int = 42
 TOLERANCE: int = 5
 
-# TODO: note that there is still some empty labels in the val dataloader!! Need to look into this!
+# TODO: note that there is still some empty labels in the test dataloader!! Need to look into this!
 
+# TODO: I should harmonize the data types here more
 
 @dataclass
 class EvalConfig(AFLLaptopConfig):
@@ -50,16 +39,9 @@ def box_to_xy(box: List[int]) -> Tuple[int, int]:
     x1, y1, x2, y2 = box
     return int((x1 + x2) / 2), int((y1 + y2) / 2)
 
-# def box_to_xy(box: List[int]) -> Tuple[int, int]:
-#     if len(box) != 4:
-#         box = box[0]
-#     x1, y1, x2, y2 = box
-#     x = int((x1 + x2) / 2)
-#     y = int((y1 + y2) / 2)
-#     return x, y
 
 def get_ball_positions(
-        detections: Dict[str, torch.Tensor],
+        detections: List[Dict[str, torch.Tensor]],
         boxes: List[torch.Tensor]
 ) -> Tuple[Optional[List[Tuple[int, int]]], Optional[List[Tuple[int, int]]]]:
     if boxes[0].numel() == 0:
@@ -77,7 +59,11 @@ def get_ball_positions(
     return [gt_ball_pos], pred_ball_pos
 
 
-def evaluate_frames(dataloader, config, model):
+def evaluate_frames(
+        dataloader: Dict[str, torch.utils.data.DataLoader],
+        config: EvalConfig,
+        model: torch.nn.Module
+) -> List[Tuple[float, float, bool]]:
     frame_stats = []
 
     for key, data in dataloader.items():
