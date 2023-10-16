@@ -29,7 +29,7 @@ normalize_trans = transforms.Compose([transforms.ToTensor(),
 
 def tensor2image(image, downscale=None):
     """
-    :param image: (c, h, w) tensor Note that I'm not 100% sure about the order of the dimensions
+    :param image: (c, h, w) tensor
     """
 
     # Convert image encoded as normalized tensor back to numpy (opencv format)
