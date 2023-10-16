@@ -34,9 +34,11 @@ class InferenceConfig(BaseConfig):
         r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\train\unpacked_png\marvel_1_time_04_09_04_date_20_08_2023_3\frame_0001549.png"
     ])
     # If provided, replaces image_paths with all PNG files in the directory
-    input_image_txt_list: str = r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\train\images_lists\marvel_1_time_04_09_04_date_20_08_2023_4.txt"
+    # input_image_txt_list: str = r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\train\images_lists\marvel_1_time_04_09_04_date_20_08_2023_4.txt"
+    input_image_txt_list: str = r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\val\image_lists\marvel_3_time_04_09_06_date_20_08_2023_4.txt"
 
-    weights_path: str = r"models/model_14_10_2023__2317/model_14_10_2023__2317_30.pth"
+
+    weights_path: str = r"models/model_15_10_2023__1154/model_15_10_2023__1154_100.pth"
 
     device: str = "cuda:0" if torch.cuda.is_available() else "cpu"
     ball_threshold: float = 0.7
