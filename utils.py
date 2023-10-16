@@ -74,3 +74,7 @@ def set_seed(seed=42) -> None:
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed(seed)
+
+def box_to_xy(box: List[int]) -> Tuple[int, int]:
+    x1, y1, x2, y2 = box
+    return int((x1 + x2) / 2), int((y1 + y2) / 2)
