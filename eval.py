@@ -13,7 +13,7 @@ Functionality:
 import torch
 
 from dataclasses import dataclass
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Optional
 
 from config import BaseConfig, AFLLaptopConfig
 from data.cvat_dataloaders import make_data_loader
@@ -24,10 +24,13 @@ from utils import set_seed
 SEED: int = 42
 TOLERANCE: int = 5
 
+# TODO: note that there is still some empty labels in the val dataloader!! Need to look into this!
+
 
 @dataclass
 class EvalConfig(AFLLaptopConfig):
     model_mode: str = "detect"
+    data_loader_mode: str = "val"
     batch_size: int = 1
     whole_dataset: bool = True
     use_augmentations: bool = False
@@ -43,71 +46,71 @@ def prepare_eval_model(config: EvalConfig) -> torch.nn.Module:
 
 
 
-# def box_to_xy(box: List[int]) -> Tuple[int, int]:
-#     x1, y1, x2, y2 = box
-#     return int((x1 + x2) / 2), int((y1 + y2) / 2)
-
 def box_to_xy(box: List[int]) -> Tuple[int, int]:
-    if len(box) != 4:
-        box = box[0]
     x1, y1, x2, y2 = box
-    x = int((x1 + x2) / 2)
-    y = int((y1 + y2) / 2)
-    return x, y
+    return int((x1 + x2) / 2), int((y1 + y2) / 2)
 
-# TODO: this is a mess rn, will clean up later. Just get something basic working. Go for a walk, then come back and fix
-#  things up properly. If this is the only thing I get done today, that's not too bad.
+# def box_to_xy(box: List[int]) -> Tuple[int, int]:
+#     if len(box) != 4:
+#         box = box[0]
+#     x1, y1, x2, y2 = box
+#     x = int((x1 + x2) / 2)
+#     y = int((y1 + y2) / 2)
+#     return x, y
 
-# TODO: note that there is still some empty labels in the val dataloader!! Need to look into this!
+def get_ball_positions(
+        detections: Dict[str, torch.Tensor],
+        boxes: List[torch.Tensor]
+) -> Tuple[Optional[List[Tuple[int, int]]], Optional[List[Tuple[int, int]]]]:
+    if boxes[0].numel() == 0:
+        return None, None
 
-# Note: will clean things up afterwards here
-def main():
-    config = EvalConfig()
-    data_loader = make_data_loader(config, modes=["val"], use_hardcoded_data_folders=False)
-    model = prepare_eval_model(config)
+    gt_ball_pos = box_to_xy(boxes[0].tolist()[0])
 
-    dataloader_keys = list(data_loader.keys())
+    if detections[0]['boxes'].shape[0] == 0:
+        return gt_ball_pos, None
 
+    # Get first prediction for now
+    pred_ball_pos = []
+    for dets in detections:
+        pred_ball_pos.append(box_to_xy(dets['boxes'][0].tolist()))
+    return [gt_ball_pos], pred_ball_pos
+
+
+def evaluate_frames(dataloader, config, model):
     frame_stats = []
 
-    for keys in dataloader_keys:
-        for count, (image, boxes, labels) in enumerate(data_loader[keys]):
+    for key, data in dataloader.items():
+        for count, (image, boxes, labels) in enumerate(data):
             image = image.to(config.device)
             detections = model(image)
-            print(boxes)
-            print(boxes[0].tolist())
-            print(detections)
+            gt_ball_pos, pred_ball_pos = get_ball_positions(detections, boxes)
+            frame_stats.append(eval_single_frame(ball_pos=pred_ball_pos, gt_ball_pos=gt_ball_pos, tolerance=TOLERANCE))
 
-            if boxes[0].numel() == 0:
-                # Pass if there are no detections
-                continue
+    return frame_stats
 
-            gt_ball_pos = box_to_xy(boxes[0].tolist())
+def print_evaluation_metrics(frame_stats):
+    correct_classifications = [c for (_, _, c) in frame_stats]
+    precisions = [p for (p, _, _) in frame_stats if p is not None]
+    recalls = [r for (_, r, _) in frame_stats if r is not None]
 
-            if len(detections[0]['boxes']) == 0:
-                pred_ball_pos = None
-
-            # Note: this only works for the 1st prediction right now.
-            for box, label, score in zip(detections[0]['boxes'], detections[0]['labels'], detections[0]['scores']):
-                pred_ball_pos = [box_to_xy(box)]
-
-            frame_stats.append(eval_single_frame(ball_pos=pred_ball_pos, gt_ball_pos=[gt_ball_pos], tolerance=5))
-
-
-    print(frame_stats)
-
-    percent_correctly_classified_frames = sum(
-        c for (_, _, c) in frame_stats
-    ) / len(frame_stats)
-    temp = [p for (p, _, _) in frame_stats if p is not None]
-    avg_precision = sum(temp) / len(temp)
-
-    temp = [r for (_, r, _) in frame_stats if r is not None]
-    avg_recall = sum(temp) / len(temp)
+    percent_correctly_classified_frames = sum(correct_classifications) / len(frame_stats)
+    avg_precision = sum(precisions) / len(precisions)
+    avg_recall = sum(recalls) / len(recalls)
 
     print(f"Percent correctly classified frames: {percent_correctly_classified_frames}")
     print(f"Average precision: {avg_precision}")
     print(f"Average recall: {avg_recall}")
+
+def main():
+    config = EvalConfig()
+    data_loader = make_data_loader(config, modes=[config.data_loader_mode], use_hardcoded_data_folders=False)
+    model = prepare_eval_model(config)
+    frame_stats = evaluate_frames(data_loader, config, model)
+
+    assert len(frame_stats) == data_loader[config.data_loader_mode].__len__(), "Frame stats and dataloader length do not match!"
+
+    print_evaluation_metrics(frame_stats)
 
 
 if __name__ == '__main__':
