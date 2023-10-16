@@ -97,8 +97,6 @@ class CVATBallDataset(torch.utils.data.Dataset):
                     print(image)
                     if 'train' in image[0] or 'bohs' in image[0]:
                         f.write(image[0] + '\n')
-        elif os.path.exists('../txt_testing_files'):
-            os.rmdir('../txt_testing_files')
 
 
     def _load_annotations_and_images(self) -> None:
