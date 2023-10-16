@@ -7,7 +7,7 @@ from config import BaseConfig, AFLLaptopConfig
 from data.cvat_dataloaders import make_data_loader
 from network.footandball import model_factory
 from data.cvat_utils import eval_single_frame
-from utils import set_seed
+from utils import set_seed, box_to_xy
 
 SEED: int = 42
 TOLERANCE: int = 5
@@ -32,12 +32,6 @@ def prepare_eval_model(config: EvalConfig) -> torch.nn.Module:
     model.eval()
     model.to(config.device)
     return model
-
-
-
-def box_to_xy(box: List[int]) -> Tuple[int, int]:
-    x1, y1, x2, y2 = box
-    return int((x1 + x2) / 2), int((y1 + y2) / 2)
 
 
 def get_ball_positions(
@@ -66,14 +60,14 @@ def evaluate_frames(
 ) -> List[Tuple[float, float, bool]]:
     frame_stats = []
 
-    for key, data in dataloader.items():
-        for count, (image, boxes, labels) in enumerate(data):
-            image = image.to(config.device)
-            detections = model(image)
-            gt_ball_pos, pred_ball_pos = get_ball_positions(detections, boxes)
-            frame_stats.append(eval_single_frame(ball_pos=pred_ball_pos, gt_ball_pos=gt_ball_pos, tolerance=TOLERANCE))
+    for image, boxes, labels in dataloader[config.data_loader_mode]:
+        image = image.to(config.device)
+        detections = model(image)
+        gt_ball_pos, pred_ball_pos = get_ball_positions(detections, boxes)
+        frame_stats.append(eval_single_frame(ball_pos=pred_ball_pos, gt_ball_pos=gt_ball_pos, tolerance=TOLERANCE))
 
     return frame_stats
+
 
 def print_evaluation_metrics(frame_stats):
     correct_classifications = [c for (_, _, c) in frame_stats]
@@ -87,6 +81,7 @@ def print_evaluation_metrics(frame_stats):
     print(f"Percent correctly classified frames: {percent_correctly_classified_frames}")
     print(f"Average precision: {avg_precision}")
     print(f"Average recall: {avg_recall}")
+
 
 def main():
     config = EvalConfig()
