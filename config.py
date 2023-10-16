@@ -35,7 +35,8 @@ class BaseConfig:
 
     # Data params
     only_ball_frames: bool = True
-    train_image_size: Tuple[int, int] = (720, 1280)
+    # TODO: I might want to consider downsizing this to (720, 1280) soon (but note this will block at a lot of ball images)
+    train_image_size: Tuple[int, int] = (1080, 1920)
     val_image_size: Tuple[int, int] = (1080, 1920)
     train_size: float = 0.9
     val_size: float = 0.1
