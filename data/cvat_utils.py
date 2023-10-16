@@ -1,4 +1,4 @@
-from typing import Tuple, List, Dict
+from typing import Tuple, List, Optional
 
 import numpy as np
 import torch
@@ -134,12 +134,11 @@ def get_train_val_lengths(dataset: torch.utils.data.Dataset, config) -> Tuple[in
     return train_dataset_length, val_dataset_length
 
 def eval_single_frame(
-        ball_pos: List[Tuple[int, int]],
+        ball_pos: Optional[List[Tuple[int, int]]],
         gt_ball_pos: List[Tuple[int, int]],
         tolerance: int = 3
 ) -> Tuple[float, float, bool]:
     """
-    Previusly called _ball_detection_stats
     Compute precision, recall, and a binary flag indicating whether the frame was
     correctly classified based on detected ball positions and ground truth ball positions.
 
@@ -160,14 +159,17 @@ def eval_single_frame(
         # Euclidean distance between two points
         return np.sqrt((float(x1[0]) - float(x2[0])) ** 2 + (float(x1[1]) - float(x2[1])) ** 2)
 
+    # Handle None or empty list for ball_pos
+    if ball_pos is None or not ball_pos:
+        precision = None
+        recall = 0 if gt_ball_pos else 1  # If there's no ground truth either, recall should be 1
+        correctly_classified = not bool(gt_ball_pos)  # Only correct if there's no ground truth
+        return precision, recall, correctly_classified
+
     # True positives, false positives and false negatives
     tp = 0
     fp = 0
     fn = 0
-
-    # Another count of true positives based on enumerating ground truth detections
-    # If tp != tp1 this means that more than one ball was detected for one ground truth ball
-    tp1 = 0
 
     # For each detected ball, check if it corresponds to a ground truth ball
     for e in ball_pos:
@@ -196,9 +198,7 @@ def eval_single_frame(
                 hit = True
                 break
 
-        if hit:
-            tp1 += 1
-        else:
+        if not hit:
             # Ball not detected - false negative
             fn += 1
 
