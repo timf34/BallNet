@@ -4,7 +4,7 @@ import os
 import random
 import torch
 
-from typing import List
+from typing import List, Tuple
 
 from config import BaseConfig
 
