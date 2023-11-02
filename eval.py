@@ -60,9 +60,17 @@ def evaluate_frames(
 ) -> List[Tuple[float, float, bool]]:
     frame_stats = []
 
+    # Temporary add
+    # for image, boxes, labels, image_path in dataloader[config.data_loader_mode]:
     for image, boxes, labels in dataloader[config.data_loader_mode]:
         image = image.to(config.device)
         detections = model(image)
+
+        # Temporary add
+        # if boxes[0].nelement() == 0:
+        #     print("The tensor is empty! Set breakpoint or look into Pycharms debugging features")
+        #     print(f"Empty image path: {image_path}")
+
         gt_ball_pos, pred_ball_pos = get_ball_positions(detections, boxes)
         frame_stats.append(eval_single_frame(ball_pos=pred_ball_pos, gt_ball_pos=gt_ball_pos, tolerance=TOLERANCE))
 
