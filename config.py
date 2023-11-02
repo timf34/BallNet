@@ -5,6 +5,7 @@ import time
 
 BALL_LABEL: int = 1
 
+
 def get_datetime():
     return time.strftime("%d_%m_%Y__%H%M")
 
@@ -21,7 +22,7 @@ class BaseConfig:
     device_type: bool = "cuda"  # Needed for a Torch call it seems
     lr: float = 3e-4
 
-    # Training parms
+    # Training params
     run_validation: bool = True
     ball_threshold: float = 0.7
     use_amp: bool = True
@@ -100,7 +101,6 @@ class LaptopConfig(BaseConfig):
     device: str = 'cuda:0'  # Local nvidia GPU locally
 
 
-
 @dataclass
 class AFLLaptopConfig(LaptopConfig):
     image_extension: str = '.png'
@@ -123,8 +123,6 @@ class AFLLaptopConfig(LaptopConfig):
             ]
         }
 
-
-              # Just for testing on laptop
 
 @dataclass
 class BohsLaptopConfig(LaptopConfig):
@@ -168,8 +166,8 @@ class AWSBaseConfig(BaseConfig):
 class AWSTestConfig(AWSBaseConfig):
     """Config for testing on AWS"""
     num_workers: int = 0
-    epochs: int = 10
-    whole_datasetwhole_dataset: bool = False
+    epochs: int = 2
+    whole_dataset: bool = False
     dataset_size_per_training_data_folder: int = 2
 
 
