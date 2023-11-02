@@ -28,9 +28,8 @@ SEED: int = 42
 def wandb_setup(model, criterion) -> None:
     wandb.init(
         project="AFL",
-        name="Local Run - overfitting 51 images - no augs",
-        notes= "Overfitting 51 images locally on laptop - image folder is marvel_1_time_04_09_04_date_20_08_2023_4."
-               "We are not using augmentation",
+        name="Local Run - full dataset - no augs",
+        notes= "Whole dataset, no augs, lets see what happens:) Running overnight",
         mode=WANDB_MODE
     )
     wandb.config.update(config)
@@ -99,8 +98,10 @@ def train_model(
 
             if phase == 'train':
                 print(f'phase: {phase} - epoch: {epoch} avg. training_loss: {avg_batch_stats["training_loss"]}')
+                wandb.log({"epoch": epoch, "avg_training_loss": avg_batch_stats["training_loss"]})
             else:
                 print(f'phase: {phase} - epoch: {epoch} avg. val_loss: {avg_batch_stats["validation_loss"]}\n')
+                wandb.log({"epoch": epoch, "avg_val_loss": avg_batch_stats["validation_loss"]})
 
         if config.whole_dataset:
             if epoch % config.save_every_n_epochs == 0:
@@ -126,9 +127,9 @@ def train(config: BaseConfig):
 
     # Load dataloaders and print dataset sizes
     if config.run_validation:
-        dataloaders = make_data_loader(config, ["train", "val"], use_hardcoded_data_folders=True)
+        dataloaders = make_data_loader(config, ["train", "val"], use_hardcoded_data_folders=False)
     else:
-        dataloaders = make_data_loader(config, ["train"], use_hardcoded_data_folders=True)
+        dataloaders = make_data_loader(config, ["train"], use_hardcoded_data_folders=False)
     for phase in dataloaders.keys():
         print(f"{phase} dataset size: {len(dataloaders[phase].dataset)}")
 
