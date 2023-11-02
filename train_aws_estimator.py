@@ -1,4 +1,5 @@
 import boto3
+import logging
 import sagemaker
 from sagemaker import estimator, LocalSession
 from sagemaker.pytorch import PyTorch
@@ -7,36 +8,35 @@ from dataclasses import dataclass
 print(sagemaker.__version__)
 print(boto3.__version__)
 
+sagemaker_logger = logging.getLogger('sagemaker')
+sagemaker_logger.setLevel(logging.DEBUG)
+
 
 @dataclass
-class AWSConfig:
+class AWSSagemakerConfig:
     role: str = 'arn:aws:iam::688364882631:role/SagemakerEstimator'
     local: bool = False
-
     max_run: int = 129600  # Set timeout to 36 hours (default is 86400 seconds, or 24 hours)
 
-    # local_training_input_path = 'file://timf3\OneDrive - Trinity College Dublin\Documents\Documents\datasets\Datasets\Bohs\\1_4_22\CVAT_annotations_30_sec_clip'
-    local_training_input_path = 'file://timf3\OneDrive - Trinity College Dublin\Documents\Documents\datasets\Datasets\Bohs\\bohs-preprocessed'
+    local_training_input_path = 'file://timf3\PycharmProjects\AFL-Data\marvel\\afl-preprocessed'
 
     # Path to directory containing training data
-    # s3_uri_training_data = 's3://bohemians-data/1_4_22/CVAT_annotations_30_sec_clip/'
-    s3_uri_training_data = 's3://bohs-preprocessed/'
+    s3_uri_training_data = 's3://dublin-afl-preprocessed/'
 
     # S3 URI for model artifacts
     # (non weights, weights are saved to the checkpoints folder)
-    s3_model_artifacts = 's3://bohemians-data/'
-
+    s3_model_artifacts = 's3://afl-training-artifacts/'
     local_model_artifacts_output_path = 'file://model/'
 
     # S3 URI for weights (not an environment variable needs to be set manually) - opt/ml/checkpoints
     if not local:
         # Our checkpoints folder.
         checkpoint_local_path = '/opt/ml/checkpoints'
-        checkpoint_s3_uri = 's3://bohemians-data/1_4_22/CVAT_annotations_30_sec_clip/checkpoints/'
+        checkpoint_s3_uri = 's3://afl-training-artifacts/checkpoints/'
 
     # Local files.
     entry_point: str = 'train.py'
-    source_dir: str = r'C:\Users\timf3\PycharmProjects\BohsNet'
+    source_dir: str = r'C:\Users\timf3\PycharmProjects\BallNet'
 
     # Estimator config
     framework_version: str = '1.12.1'
@@ -46,11 +46,13 @@ class AWSConfig:
     # This allows us to stream data from S3 to the training instance, rather than having to download the entire dataset - It should be faster.
     file_input_mode: str = "FastFile"
 
-    # Note: I have changed this to a more expensive config!
-    train_instance_type: str = 'local' if local else 'ml.p3.2xlarge'  # TODO: note this is the expensive instance rn!
+    # Instance types page (incl. info on cost): https://www.notion.so/Sagemaker-Estimator-63193c013110465989a520706d462565
+    # Cheap for testing: ml.m5.large
+    # Better performance for training: ml.p3.2xlarge or ml.p2.xlarge
+    train_instance_type: str = 'local' if local else 'ml.p2.xlarge'
 
 
-def initialise_session(config: AWSConfig) -> sagemaker.Session:
+def initialise_session(config: AWSSagemakerConfig) -> sagemaker.Session:
     """
     This function initialises the session
     """
@@ -62,7 +64,7 @@ def initialise_session(config: AWSConfig) -> sagemaker.Session:
     return sess
 
 
-def initialise_estimator(config: AWSConfig, sess: sagemaker.Session) -> estimator.Estimator:
+def initialise_estimator(config: AWSSagemakerConfig, sess: sagemaker.Session) -> estimator.Estimator:
     """
     This function initialises the estimator
     Docs for PyTorch estimator: https://sagemaker.readthedocs.io/en/stable/frameworks/pytorch/sagemaker.pytorch.html
@@ -83,13 +85,10 @@ def initialise_estimator(config: AWSConfig, sess: sagemaker.Session) -> estimato
             role=config.role,
             env=env,
             framework_version=config.framework_version,
-            # train_instance_count=config.train_instance_count, # rename to instance_count
             instance_count=config.train_instance_count,
-            # train_instance_type=config.train_instance_type, # renaned to instance_type
             instance_type=config.train_instance_type,
             output_path=config.local_model_artifacts_output_path,
             sagemaker_session=sess
-            # checkpoint_s3_uri=config.checkpoint_s3_uri
         )
     else:
         # Initialise the estimator
@@ -101,9 +100,7 @@ def initialise_estimator(config: AWSConfig, sess: sagemaker.Session) -> estimato
             env=env,
             input_mode="FastFile",
             framework_version=config.framework_version,
-            # train_instance_count=config.train_instance_count, # rename to instance_count
             instance_count=config.train_instance_count,
-            # train_instance_type=config.train_instance_type, # renaned to instance_type
             instance_type=config.train_instance_type,
             output_path=config.s3_model_artifacts,
             sagemaker_session=sess,
@@ -121,7 +118,7 @@ def run_estimator() -> None:
     """
     This function runs the estimator on the training data
     """
-    config = AWSConfig()
+    config = AWSSagemakerConfig()
     sess = initialise_session(config)
     estimator = initialise_estimator(config, sess)
     sagemaker.inputs.TrainingInput.input_mode = "FastFile"
