@@ -13,6 +13,7 @@ from typing import List, Dict
 from data.cvat_dataset import create_dataset_from_config, CVATBallDataset
 from config import BaseConfig
 
+
 def make_data_loader(config: BaseConfig, modes: List[str], use_hardcoded_data_folders: bool) -> Dict[str, DataLoader]:
     data_loader = {}
     for mode in modes:
