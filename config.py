@@ -93,7 +93,7 @@ class LaptopConfig(BaseConfig):
     whole_dataset: bool = True
     dataset_size_per_training_data_folder: int = 3
     use_augmentations: bool = True
-    batch_size: int = 3  # Max batch size for laptop GPU
+    batch_size: int = 1  # Max batch size for laptop GPU
 
     # Misc
     save_weights_when_testing: bool = True
@@ -130,6 +130,8 @@ class AFLLaptopConfig(LaptopConfig):
 class BohsLaptopConfig(LaptopConfig):
     image_extension: str = '.jpg'
     base_data_path: str = r'C:\Users\timf3\OneDrive - Trinity College Dublin\Documents\Documents\datasets\Datasets\Bohs\bohs-preprocessed'
+
+    use_augmentations = False
 
     def __post_init__(self):
         self.data_folder_paths: List[str] = [
