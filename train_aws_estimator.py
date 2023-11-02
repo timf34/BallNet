@@ -35,7 +35,7 @@ class AWSConfig:
         checkpoint_s3_uri = 's3://bohemians-data/1_4_22/CVAT_annotations_30_sec_clip/checkpoints/'
 
     # Local files.
-    entry_point: str = 'train_detector.py'
+    entry_point: str = 'train.py'
     source_dir: str = r'C:\Users\timf3\PycharmProjects\BohsNet'
 
     # Estimator config
