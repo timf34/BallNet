@@ -98,7 +98,6 @@ class CVATBallDataset(torch.utils.data.Dataset):
                     if 'train' in image[0] or 'bohs' in image[0]:
                         f.write(image[0] + '\n')
 
-
     def _load_annotations_and_images(self) -> None:
         for data_folder in self.data_folder_paths:
             # Read ground truth data for the sequence
@@ -109,7 +108,6 @@ class CVATBallDataset(torch.utils.data.Dataset):
             annotated_frames = self._get_annotated_frames(data_folder)
             images_path = os.path.join(self.image_folder_path, data_folder)
             self._populate_image_list(images_path, annotated_frames, data_folder)
-
 
     def _get_annotated_frames(self, data_folder: str) -> List[str]:
         """
@@ -163,6 +161,7 @@ class CVATBallDataset(torch.utils.data.Dataset):
 
         return ball_images_ndx
 
+
 def get_data_folders_for_mode(training_mode: str, base_path: str) -> List[str]:
     """Returns a list of data folders for the given training mode"""
     assert training_mode in {
@@ -179,6 +178,7 @@ def get_data_folders_for_mode(training_mode: str, base_path: str) -> List[str]:
         return get_folders(os.path.join(base_path, 'val/unpacked_png'))
     elif training_mode == 'test':
         return get_folders(os.path.join(base_path, 'test/unpacked_png'))
+
 
 def create_dataset_from_config(
         conf: BaseConfig,
