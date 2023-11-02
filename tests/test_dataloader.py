@@ -61,7 +61,7 @@ def test_iterating_dataloader(config):
 # Note: with a small dataset size, this will sometimes fail, just run it again.
 @pytest.mark.parametrize("config", configs)
 def test_data_shuffling(config):
-    data_loaders = make_data_loader(config, ["train"], False)
+    data_loaders = make_data_loader(config, modes, False)
 
     # Get the boxes from the first batch for the first epoch
     first_epoch_boxes = next(iter(data_loaders["train"]))[1]
