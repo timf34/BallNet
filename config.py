@@ -191,6 +191,7 @@ class AWSSagemakerNotebook(BaseConfig):
     aws_testing: bool = False  # For test runs, not full training runs
 
     model_folder: str = "weights"
+    checkpoints_folder = "weights"
     base_data_path: str = "dublin-afl-preprocessed"
 
     num_works: int = 8
