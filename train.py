@@ -1,5 +1,4 @@
 import os
-import random
 from typing import List, Dict
 
 import numpy as np
@@ -12,7 +11,7 @@ import wandb
 from network import footandball
 from data.cvat_dataloaders import make_data_loader
 from network.ssd_loss import SSDLoss
-from config import BaseConfig, BohsLaptopConfig, AFLLaptopConfig
+from config import BaseConfig, AFLLaptopConfig, AWSTestConfig, AWSSagemakerNotebook
 from utils import save_model_weights, set_seed
 
 WANDB_MODE = 'online'
@@ -28,8 +27,8 @@ SEED: int = 42
 def wandb_setup(model, criterion) -> None:
     wandb.init(
         project="AFL",
-        name="Local Run - full dataset - no augs",
-        notes= "Whole dataset, no augs, lets see what happens:) Running overnight",
+        name="Sagemaker notebook first run hopefully",
+        notes="Testing",
         mode=WANDB_MODE
     )
     wandb.config.update(config)
@@ -124,7 +123,6 @@ def train(config: BaseConfig):
         os.mkdir(config.model_folder)
     assert os.path.exists(config.model_folder), f' Cannot create folder to save trained model: {config.model_folder}'
 
-
     # Load dataloaders and print dataset sizes
     if config.run_validation:
         dataloaders = make_data_loader(config, ["train", "val"], use_hardcoded_data_folders=False)
@@ -132,7 +130,6 @@ def train(config: BaseConfig):
         dataloaders = make_data_loader(config, ["train"], use_hardcoded_data_folders=False)
     for phase in dataloaders.keys():
         print(f"{phase} dataset size: {len(dataloaders[phase].dataset)}")
-
 
     # Create model
     model = footandball.model_factory('fb1', 'train')
@@ -163,6 +160,7 @@ def train(config: BaseConfig):
 
 if __name__ == '__main__':
     set_seed(SEED)
-    config = AFLLaptopConfig()
+    # config = AFLLaptopConfig()
+    config = AWSSagemakerNotebook()
     config.pretty_print()
     train(config)

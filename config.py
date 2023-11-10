@@ -141,6 +141,7 @@ class BohsLaptopConfig(LaptopConfig):
 @dataclass
 class AWSBaseConfig(BaseConfig):
     """Base Config for training on AWS SageMaker"""
+    aws: bool = True
     aws_testing: bool = False  # For test runs, not full training runs
 
     # Paths
@@ -165,6 +166,8 @@ class AWSBaseConfig(BaseConfig):
 @dataclass
 class AWSTestConfig(AWSBaseConfig):
     """Config for testing on AWS"""
+    base_data_path = "s3://dublin-afl-preprocessed/"
+    aws_testing = True
     num_workers: int = 0
     epochs: int = 2
     whole_dataset: bool = False
@@ -179,6 +182,22 @@ class AWSTrainConfig(AWSBaseConfig):
     epochs: int = 20
     whole_dataset: bool = True
     dataset_size_per_training_data_folder: int = -1  # Just a placeholder
+
+
+@dataclass
+class AWSSagemakerNotebook:
+
+    aws: bool = True
+    aws_testing: bool = False  # For test runs, not full training runs
+
+    model_folder: str = "weights"
+    bohs_path: str = "dublin-afl-preprocessed"
+
+    num_works: int = 8
+    batch_size: int = 32
+    epochs: int = 100
+    whole_dataset: bool = True
+    dataset_size_per_training_data_folder = 1  # Just a placeholder
 
 
 @dataclass
