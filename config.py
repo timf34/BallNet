@@ -185,7 +185,7 @@ class AWSTrainConfig(AWSBaseConfig):
 
 
 @dataclass
-class AWSSagemakerNotebook:
+class AWSSagemakerNotebook(BaseConfig):
 
     aws: bool = True
     aws_testing: bool = False  # For test runs, not full training runs
