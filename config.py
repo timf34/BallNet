@@ -71,8 +71,8 @@ class BaseConfig:
     def __post_init__(self):
         if self.whole_dataset is None:
             raise ValueError("`whole_dataset` must be set.")
-        if self.dataset_size_per_training_data_folder is None:
-            raise ValueError("`dataset_size_per_training_data_folder` must be set.")
+        # if self.dataset_size_per_training_data_folder is None:
+        #     raise ValueError("`dataset_size_per_training_data_folder` must be set.")
         if self.base_data_path is None:
             raise ValueError("`base_data_path` must be set.")
         if self.epochs is None:
