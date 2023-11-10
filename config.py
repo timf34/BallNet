@@ -191,13 +191,13 @@ class AWSSagemakerNotebook(BaseConfig):
     aws_testing: bool = False  # For test runs, not full training runs
 
     model_folder: str = "weights"
-    bohs_path: str = "dublin-afl-preprocessed"
+    base_data_path: str = "dublin-afl-preprocessed"
 
     num_works: int = 8
     batch_size: int = 32
     epochs: int = 100
     whole_dataset: bool = True
-    dataset_size_per_training_data_folder = 1  # Just a placeholder
+    dataset_size_per_training_data_folder: int = -11  # Just a placeholder
 
 
 @dataclass
