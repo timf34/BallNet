@@ -79,8 +79,8 @@ class BaseConfig:
             raise ValueError("`epochs` must be set.")
         if self.aws is None:
             raise ValueError("`aws` must be set.")
-        if self.checkpoints_folder is None and self.aws is True:
-            raise ValueError("`checkpoints_folder` must be set if using AWS.")
+        # if self.checkpoints_folder is None and self.aws is True:
+        #     raise ValueError("`checkpoints_folder` must be set if using AWS.")
 
 
 @dataclass
