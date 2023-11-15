@@ -25,6 +25,16 @@ inference on.
 
 @dataclass
 class InferenceConfig(BaseConfig):
+    folder_paths: List[str] = field(default_factory=lambda: [
+        r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\val\unpacked_png\marvel_1_time_04_09_04_date_20_08_2023_2",
+        r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\val\unpacked_png\marvel_3_time_04_09_06_date_20_08_2023_4",
+        r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\val\unpacked_png\marvel_8_time_09_09_04_date_27_08_2023_1",
+        r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\test\unpacked_png\marvel_1_time_04_09_04_date_20_08_2023_1",
+        r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\test\unpacked_png\marvel_3_time_04_09_06_date_20_08_2023_6",
+        r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\test\unpacked_png\marvel_8_time_09_09_04_date_27_08_2023_6",
+        r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\val\unpacked_png\marvel_6_time_10_24_03_date_19_08_2023_7"
+    ])
+
     image_paths: List[str] = field(default_factory=lambda: [
         r"C:\\Users\\timf3\\PycharmProjects\\AFL-Data\\marvel\\afl-preprocessed\\train\\unpacked_png\\marvel_1_time_04_09_04_date_20_08_2023_0\\frame_0000515.png",
         r"C:\\Users\\timf3\\PycharmProjects\\AFL-Data\\marvel\\afl-preprocessed\\train\\unpacked_png\\marvel_1_time_04_09_04_date_20_08_2023_0\\frame_0001527.png",
@@ -33,6 +43,11 @@ class InferenceConfig(BaseConfig):
         r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\train\unpacked_png\marvel_1_time_04_09_04_date_20_08_2023_3\frame_0001548.png",
         r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\train\unpacked_png\marvel_1_time_04_09_04_date_20_08_2023_3\frame_0001549.png"
     ])
+
+    video_paths: List[str] = field(default_factory=lambda: [
+        ""
+    ]
+                                   )
     # If provided, replaces image_paths with all PNG files in the directory
     # input_image_txt_list: str = r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\train\images_lists\marvel_1_time_04_09_04_date_20_08_2023_4.txt"
     input_image_txt_list: str = r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\val\image_lists\marvel_3_time_04_09_06_date_20_08_2023_4.txt"
@@ -62,6 +77,7 @@ class RunDetector:
         self.load_model_weights()
 
         self.image_path: List[str] = self.config.image_paths
+        self.folder_path: List[str] = self.config.folder_paths
 
     def load_model_weights(self) -> None:
         if self.config.device == 'cpu':
@@ -89,9 +105,60 @@ class RunDetector:
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
+    def run_on_image_folders(self, folder_path: str, save_video: bool = False) -> None:
+        """
+        This function iterates through a folder containing images, runs inference on each image,
+        and saves them to a folder.
+        """
+        assert os.path.isdir(folder_path), f'Folder path {folder_path} does not exist'
+
+        # Getting list of image files in the folder
+        image_files = [f for f in os.listdir(folder_path) if f.endswith('.png') or f.endswith('.jpg')]
+        image_files.sort()  # Ensure the images are processed in order
+
+        # Video writer initialization
+        video_writer = None
+        if save_video:
+            # Example configuration, adjust according to your needs
+            frame_size = (1920, 1080)  # Adjust this based on your image dimensions
+            video_writer = cv2.VideoWriter('output.avi', cv2.VideoWriter_fourcc(*'XVID'), 30, frame_size)
+
+        for image_file in image_files:
+            image_path = os.path.join(folder_path, image_file)
+            image = cv2.imread(image_path)
+
+            if image is None:
+                print(f'Could not read image at {image_path}')
+                continue
+
+            img_tensor = augmentations.numpy2tensor(image)
+
+            with torch.no_grad():
+                # Add dimension for the batch size
+                img_tensor = img_tensor.unsqueeze(dim=0).to(self.config.device)
+                detections = self.model(img_tensor)[0]
+
+            processed_image = draw_bboxes(image, detections)
+
+            if save_video:
+                video_writer.write(processed_image)
+            else:
+                cv2.imshow('Processed Image', processed_image)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
+
+        if video_writer is not None:
+            video_writer.release()
+
+        cv2.destroyAllWindows()
+
     def run(self) -> None:
-        for image_path in self.image_path:
-            self.run_on_image(image_path)
+        # for image_path in self.image_path:
+        #     self.run_on_image(image_path)
+
+        for folder_path in self.folder_path:
+            self.run_on_image_folders(folder_path, save_video=False)
+
 
 if __name__ == '__main__':
     config = InferenceConfig()
