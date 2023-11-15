@@ -26,13 +26,14 @@ inference on.
 @dataclass
 class InferenceConfig(BaseConfig):
     folder_paths: List[str] = field(default_factory=lambda: [
-        r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\val\unpacked_png\marvel_1_time_04_09_04_date_20_08_2023_2",
-        r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\val\unpacked_png\marvel_3_time_04_09_06_date_20_08_2023_4",
-        r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\val\unpacked_png\marvel_8_time_09_09_04_date_27_08_2023_1",
-        r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\test\unpacked_png\marvel_1_time_04_09_04_date_20_08_2023_1",
-        r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\test\unpacked_png\marvel_3_time_04_09_06_date_20_08_2023_6",
-        r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\test\unpacked_png\marvel_8_time_09_09_04_date_27_08_2023_6",
-        r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\val\unpacked_png\marvel_6_time_10_24_03_date_19_08_2023_7"
+        # r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\val\unpacked_png\marvel_1_time_04_09_04_date_20_08_2023_2",
+        # r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\val\unpacked_png\marvel_3_time_04_09_06_date_20_08_2023_4",
+        # r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\val\unpacked_png\marvel_8_time_09_09_04_date_27_08_2023_1",
+        # r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\test\unpacked_png\marvel_1_time_04_09_04_date_20_08_2023_1",
+        # r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\test\unpacked_png\marvel_3_time_04_09_06_date_20_08_2023_6",
+        # r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\test\unpacked_png\marvel_8_time_09_09_04_date_27_08_2023_6",
+        # r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\afl-preprocessed\val\unpacked_png\marvel_6_time_10_24_03_date_19_08_2023_7"
+        r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\marvel-fov-3\20_08_2023\marvel_3_time_04_09_06_date_20_08_2023_\marvel_3_time_04_09_06_date_20_08_2023_4"
     ])
 
     image_paths: List[str] = field(default_factory=lambda: [
@@ -45,7 +46,7 @@ class InferenceConfig(BaseConfig):
     ])
 
     video_paths: List[str] = field(default_factory=lambda: [
-        ""
+        # r"C:\Users\timf3\PycharmProjects\AFL-Data\marvel\marvel-fov-5\18_08_2023\marvel_5_time_10_24_03_date_19_08_2023_.avi"
     ]
                                    )
     # If provided, replaces image_paths with all PNG files in the directory
@@ -78,6 +79,7 @@ class RunDetector:
 
         self.image_path: List[str] = self.config.image_paths
         self.folder_path: List[str] = self.config.folder_paths
+        self.video_paths: List[str] = self.config.video_paths
 
     def load_model_weights(self) -> None:
         if self.config.device == 'cpu':
@@ -126,6 +128,7 @@ class RunDetector:
         for image_file in image_files:
             image_path = os.path.join(folder_path, image_file)
             image = cv2.imread(image_path)
+            image = cv2.resize(image, (1920, 1080))
 
             if image is None:
                 print(f'Could not read image at {image_path}')
@@ -152,12 +155,56 @@ class RunDetector:
 
         cv2.destroyAllWindows()
 
+    def run_on_video(self, video_path: str, save_video: bool = False) -> None:
+        """
+        This function processes a video file, runs inference on each frame,
+        and optionally saves the output as a new video file.
+        """
+        assert os.path.isfile(video_path), f'Video file {video_path} does not exist'
+
+        cap = cv2.VideoCapture(video_path)
+
+        # Video writer initialization
+        video_writer = None
+        if save_video:
+            # Adjust frame size and FPS according to the input video
+            frame_size = (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
+            fps = cap.get(cv2.CAP_PROP_FPS)
+            video_writer = cv2.VideoWriter('output.avi', cv2.VideoWriter_fourcc(*'XVID'), fps, frame_size)
+
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            img_tensor = augmentations.numpy2tensor(frame)
+            with torch.no_grad():
+                img_tensor = img_tensor.unsqueeze(dim=0).to(self.config.device)
+                detections = self.model(img_tensor)[0]
+
+            processed_frame = draw_bboxes(frame, detections)
+
+            if save_video:
+                video_writer.write(processed_frame)
+            else:
+                cv2.imshow('Processed Frame', processed_frame)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
+
+        cap.release()
+        if video_writer is not None:
+            video_writer.release()
+        cv2.destroyAllWindows()
+
     def run(self) -> None:
         # for image_path in self.image_path:
         #     self.run_on_image(image_path)
 
-        for folder_path in self.folder_path:
-            self.run_on_image_folders(folder_path, save_video=False)
+        # for folder_path in self.folder_path:
+        #     self.run_on_image_folders(folder_path, save_video=False)
+
+        for video_path in self.video_paths:
+            self.run_on_video(video_path, save_video=False)
 
 
 if __name__ == '__main__':
